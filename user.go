@@ -1,7 +1,9 @@
 package go_kit_realworld_example_app
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -10,9 +12,25 @@ type Bio struct {
 	Valid bool
 }
 
+func (b Bio) MarshalJSON() ([]byte, error) {
+	if b.Valid {
+		return json.Marshal(b.Value)
+	}
+
+	return json.Marshal(nil)
+}
+
 type Image struct {
 	Value string
 	Valid bool
+}
+
+func (i Image) MarshalJSON() ([]byte, error) {
+	if i.Valid {
+		return json.Marshal(i.Value)
+	}
+
+	return json.Marshal(nil)
 }
 
 type User struct {
@@ -38,16 +56,35 @@ func (u *User) CheckPassword(plain string) bool {
 }
 
 type UserService interface {
-	Register(user User) error
-	Get(email string) (*User, error)
+	Register(user User) (*User, error)
+	Login(user User) (*User, error)
+	Get(user User) (*User, error)
 }
-
-// ==========================================================================================
-// Store
-// ==========================================================================================
 
 type UserRepo interface {
 	// TODO: should this return user? What if we assume this should only be a **write** command
 	Create(u User) (*User, error)
 	Get(e string) (*User, error)
+	GetByID(id int64) (*User, error)
+}
+
+func UserAlreadyExistsError(email string) error {
+	return Error{
+		Code: EConflict,
+		Err:  fmt.Errorf("user with email: %s already exists", email),
+	}
+}
+
+func UserNotFoundError(email string) error {
+	return Error{
+		Code: ENotFound,
+		Err:  fmt.Errorf("user with email: %s not found", email),
+	}
+}
+
+func IncorrectPasswordError() error {
+	return Error{
+		Code: EIncorrectPassword,
+		Err:  errors.New("incorrect password"),
+	}
 }

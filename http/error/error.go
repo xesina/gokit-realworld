@@ -1,10 +1,11 @@
-package http
+package error
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"github.com/go-ozzo/ozzo-validation/v4"
+	realworld "github.com/xesina/go-kit-realworld-example-app"
 	"net/http"
 )
 
@@ -19,15 +20,14 @@ var (
 )
 
 // encode errors from business-logic
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 	if err == nil {
-		panic("encodeError with nil error")
+		panic("EncodeError with nil error")
 	}
-
 	e := toError(err)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	// TODO: waht should do I with the error
-	jsonResponse(w, e, e.Code)
+	w.WriteHeader(e.Code)
+	json.NewEncoder(w).Encode(e)
 }
 
 type Error struct {
@@ -51,18 +51,29 @@ func (e Error) Error() string {
 }
 
 func toError(err error) (e Error) {
-	switch t := err.(type) {
-	case Error:
-		e = t
-	case validation.Errors:
-		e = newValidationError(t)
+	switch {
+	case errors.As(err, &Error{}):
+		e = Error{}
+		errors.As(err, &e)
+
+	case errors.As(err, &validation.Errors{}):
+		temp := validation.Errors{}
+		errors.As(err, &temp)
+		e = newValidationError(temp)
+
+	case errors.As(err, &realworld.Error{}):
+		temp := realworld.Error{}
+		errors.As(err, &temp)
+		e = newDomainError(temp)
+
 	default:
 		e = newInternalError(ErrInternal)
 	}
+
 	return
 }
 
-func newError(code int, err error) Error {
+func NewError(code int, err error) Error {
 	return Error{
 		Code: code,
 		Errors: map[string][]error{
@@ -72,7 +83,7 @@ func newError(code int, err error) Error {
 }
 
 func newInternalError(err error) Error {
-	return newError(http.StatusInternalServerError, err)
+	return NewError(http.StatusInternalServerError, err)
 }
 
 func newValidationError(errs validation.Errors) (e Error) {
@@ -83,4 +94,22 @@ func newValidationError(errs validation.Errors) (e Error) {
 	}
 
 	return e
+}
+
+func newDomainError(err realworld.Error) (e Error) {
+	e.Code = mapDomainErrorCode(err.Code)
+	e.Errors = make(map[string][]error)
+	e.Errors[defaultErrorField] = []error{err.Err}
+	return e
+}
+
+func mapDomainErrorCode(code string) int {
+	switch code {
+	case realworld.EConflict:
+		return http.StatusUnprocessableEntity
+	case realworld.ENotFound:
+		return http.StatusNotFound
+	default:
+		return http.StatusInternalServerError
+	}
 }

@@ -1,20 +1,18 @@
 package http
 
 import (
-	"context"
-	"encoding/json"
+	"github.com/go-chi/chi"
 	"github.com/go-kit/kit/log"
 	kitTransport "github.com/go-kit/kit/transport"
 	transport "github.com/go-kit/kit/transport/http"
-	"github.com/labstack/echo/v4"
-	"github.com/xesina/go-kit-realworld-example-app/user"
+	realworld "github.com/xesina/go-kit-realworld-example-app"
+	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
+	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
 	"net/http"
 	"os"
 )
 
-func MakeHTTPHandler(s user.Service) http.Handler {
-	r := echo.New()
-
+func MakeHTTPHandler(userSrv realworld.UserService) http.Handler {
 	var logger log.Logger
 	{
 		logger = log.NewLogfmtLogger(os.Stderr)
@@ -24,24 +22,27 @@ func MakeHTTPHandler(s user.Service) http.Handler {
 
 	options := []transport.ServerOption{
 		transport.ServerErrorHandler(kitTransport.NewLogErrorHandler(log.With(logger, "component", "HTTP"))),
-		transport.ServerErrorEncoder(encodeError),
+		transport.ServerErrorEncoder(httpError.EncodeError),
 	}
 
-	r.POST("/users", echo.WrapHandler(transport.NewServer(
-		user.RegisterEndpoint(s),
-		decodeUserRegisterRequest,
-		encodeUserRegisterResponse,
-		options...,
-	)))
+	tokenAuth := middleware.New("HS256", []byte("secret"), nil)
+
+	r := chi.NewRouter()
+
+	c := Context{
+		router:        r,
+		jwt:           tokenAuth,
+		serverOptions: options,
+		userService:   userSrv,
+	}
+
+	RegisterRoutes(c, r)
 
 	return r
 }
 
-func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(user.Response); ok && e.Err != nil {
-		encodeError(ctx, e.Err, w)
-		return nil
+func wrapHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return json.NewEncoder(w).Encode(response)
 }

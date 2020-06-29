@@ -3,13 +3,39 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	realworld "github.com/xesina/go-kit-realworld-example-app"
+	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
+	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
 	"github.com/xesina/go-kit-realworld-example-app/user"
 	"io"
 	"net/http"
+	"time"
 )
+
+type UserHandler struct {
+	service realworld.UserService
+	jwt     *middleware.JWTAuth
+}
+
+func NewUserHandler(s realworld.UserService, ja *middleware.JWTAuth) UserHandler {
+	return UserHandler{
+		service: s,
+		jwt:     ja,
+	}
+}
+
+func (h UserHandler) decodeRegisterRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req userRegisterRequest
+	if err := req.bind(r.Body); err != nil {
+		return nil, err
+	}
+	er := req.endpointRequest()
+	return er, nil
+}
 
 type userRegisterRequest struct {
 	User struct {
@@ -21,7 +47,7 @@ type userRegisterRequest struct {
 
 func (req *userRegisterRequest) bind(r io.Reader) error {
 	if e := json.NewDecoder(r).Decode(&req); e != nil {
-		return newError(http.StatusUnprocessableEntity, ErrRequestBody)
+		return httpError.NewError(http.StatusUnprocessableEntity, httpError.ErrRequestBody)
 	}
 	if err := req.validate(); err != nil {
 		return err
@@ -32,7 +58,7 @@ func (req *userRegisterRequest) bind(r io.Reader) error {
 func (req *userRegisterRequest) validate() error {
 	return validation.ValidateStruct(
 		&req.User,
-		validation.Field(&req.User.Username, validation.Required, validation.Length(5, 50)),
+		validation.Field(&req.User.Username, validation.Required, validation.Length(4, 50)),
 		validation.Field(&req.User.Email, validation.Required, is.Email),
 		validation.Field(&req.User.Password, validation.Required, validation.Length(6, 50)),
 	)
@@ -44,15 +70,6 @@ func (req *userRegisterRequest) endpointRequest() user.RegisterRequest {
 		Email:    req.User.Email,
 		Password: req.User.Password,
 	}
-}
-
-func decodeUserRegisterRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req userRegisterRequest
-	if err := req.bind(r.Body); err != nil {
-		return nil, err
-	}
-	er := req.endpointRequest()
-	return er, nil
 }
 
 type userResponse struct {
@@ -67,24 +84,106 @@ type userRegisterResponse struct {
 	User userResponse `json:"user"`
 }
 
-func newUserRegisterResponse(u *user.Response) userRegisterResponse {
+func newUserResponse(u *user.Response) userRegisterResponse {
 	return userRegisterResponse{
 		User: userResponse{
 			Username: u.Username,
 			Email:    u.Email,
 			Bio:      u.Bio,
 			Image:    u.Image,
-			Token:    "FIX-ME",
 		},
 	}
 }
 
-func encodeUserRegisterResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	e, ok := response.(user.Response)
-	if ok && e.Err != nil {
-		encodeError(ctx, e.Err, w)
+func (h UserHandler) decodeLoginRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req userLoginRequest
+	if err := req.bind(r.Body); err != nil {
+		return nil, err
+	}
+	er := req.endpointRequest()
+	return er, nil
+}
+
+func (h UserHandler) encodeUserResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if resp, ok := response.(endpoint.Failer); ok && resp.Failed() != nil {
+		httpError.EncodeError(ctx, resp.Failed(), w)
 		return nil
 	}
-	hresp := newUserRegisterResponse(&e)
+
+	e := response.(user.Response)
+
+	hresp := newUserResponse(&e)
+	_, tokenString, err := h.jwt.Encode(
+		jwt.MapClaims{
+			"id":  e.ID,
+			"exp": time.Now().Add(time.Hour * 72).Unix(),
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	hresp.User.Token = tokenString
+
 	return jsonResponse(w, hresp, http.StatusCreated)
+}
+
+type userLoginRequest struct {
+	User struct {
+		Email    string `json:"email" valid:"required,email~does not validate as email"`
+		Password string `json:"password" valid:"required~First name is blank"`
+	} `json:"user"`
+}
+
+func (req *userLoginRequest) bind(r io.Reader) error {
+	if e := json.NewDecoder(r).Decode(&req); e != nil {
+		return httpError.NewError(http.StatusUnprocessableEntity, httpError.ErrRequestBody)
+	}
+	if err := req.validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (req *userLoginRequest) validate() error {
+	return validation.ValidateStruct(
+		&req.User,
+		validation.Field(&req.User.Email, validation.Required, is.Email),
+		validation.Field(&req.User.Password, validation.Required, validation.Length(6, 50)),
+	)
+}
+
+func (req *userLoginRequest) endpointRequest() user.LoginRequest {
+	return user.LoginRequest{
+		Email:    req.User.Email,
+		Password: req.User.Password,
+	}
+}
+
+type userGetRequest struct {
+	ID int64
+}
+
+func (req *userGetRequest) endpointRequest() user.GetRequest {
+	return user.GetRequest{
+		ID: req.ID,
+	}
+}
+
+func (h UserHandler) decodeGetRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	// TODO: handle unexpected errors
+	_, claims, err := middleware.FromContext(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	t := claims["id"].(float64)
+
+	id := int64(t)
+	req := userGetRequest{
+		ID: id,
+	}
+
+	er := req.endpointRequest()
+	return er, nil
 }
