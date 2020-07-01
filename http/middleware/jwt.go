@@ -25,9 +25,6 @@ var (
 	ErrAlgoInvalid  = errors.New("jwtauth: algorithm mismatch")
 )
 
-// TODO: get from config
-var JWTSecret = []byte("!!SECRET!!")
-
 type JWTAuth struct {
 	signKey   interface{}
 	verifyKey interface{}
@@ -50,15 +47,6 @@ func NewWithParser(alg string, parser *jwt.Parser, signKey interface{}, verifyKe
 		signer:    jwt.GetSigningMethod(alg),
 		parser:    parser,
 	}
-}
-
-func jwtToken(id int64) string {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["id"] = id
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-	t, _ := token.SignedString(JWTSecret)
-	return t
 }
 
 func Verifier(ja *JWTAuth) func(http.Handler) http.Handler {
@@ -203,11 +191,6 @@ func FromContext(ctx context.Context) (*jwt.Token, jwt.MapClaims, error) {
 	return token, claims, err
 }
 
-// UnixTime returns the given time in UTC milliseconds
-func UnixTime(tm time.Time) int64 {
-	return tm.UTC().Unix()
-}
-
 // EpochNow is a helper function that returns the NumericDate time value used by the spec
 func EpochNow() int64 {
 	return time.Now().UTC().Unix()
@@ -218,19 +201,9 @@ func ExpireIn(tm time.Duration) int64 {
 	return EpochNow() + int64(tm.Seconds())
 }
 
-// Set issued at ("iat") to specified time in the claims
-func SetIssuedAt(claims jwt.MapClaims, tm time.Time) {
-	claims["iat"] = tm.UTC().Unix()
-}
-
 // Set issued at ("iat") to present time in the claims
 func SetIssuedNow(claims jwt.MapClaims) {
 	claims["iat"] = EpochNow()
-}
-
-// Set expiry ("exp") in the claims
-func SetExpiry(claims jwt.MapClaims, tm time.Time) {
-	claims["exp"] = tm.UTC().Unix()
 }
 
 // Set expiry ("exp") in the claims to some duration from the present time

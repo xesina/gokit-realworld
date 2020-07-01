@@ -33,6 +33,7 @@ func (i Image) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }
 
+// TODO: where should we put the validation? Should we have separate validation per domain model and transports?
 type User struct {
 	ID       int64
 	Username string
@@ -75,10 +76,10 @@ func UserAlreadyExistsError(email string) error {
 	}
 }
 
-func UserNotFoundError(email string) error {
+func UserNotFoundError() error {
 	return Error{
 		Code: ENotFound,
-		Err:  fmt.Errorf("user with email: %s not found", email),
+		Err:  errors.New("user not found"),
 	}
 }
 

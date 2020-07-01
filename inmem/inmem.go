@@ -52,7 +52,7 @@ func (store *memUserSaver) GetByID(id int64) (*realworld.User, error) {
 	}
 	user, ok := store.m[email]
 	if !ok {
-		return nil, errors.New("user not found")
+		return nil, realworld.UserNotFoundError()
 	}
 	return &user, nil
 }

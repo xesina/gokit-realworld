@@ -14,3 +14,6 @@ lint: check-linter
 .PHONY: fmt
 fmt:
 	go fmt ./...
+
+run:
+	cd cmd/server && go run main.go

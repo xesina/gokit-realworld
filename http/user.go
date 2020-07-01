@@ -113,6 +113,14 @@ func (h UserHandler) encodeUserResponse(ctx context.Context, w http.ResponseWrit
 	e := response.(user.Response)
 
 	hresp := newUserResponse(&e)
+
+	claims := jwt.MapClaims{
+		"id": e.ID,
+	}
+
+	middleware.SetIssuedNow(claims)
+	middleware.SetExpiryIn(claims, time.Hour*24*5)
+
 	_, tokenString, err := h.jwt.Encode(
 		jwt.MapClaims{
 			"id":  e.ID,
