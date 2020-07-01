@@ -8,31 +8,27 @@ import (
 )
 
 func RegisterRoutes(c Context, r *chi.Mux) {
-	uh := NewUserHandler(c.userService, c.jwt)
+	uh := NewUserHandler(c)
 
 	api := r.Route("/api", nil)
 
 	api.Route("/users", func(r chi.Router) {
-		r.Post("/", uh.registerHandlerFunc(c.serverOptions...))
-		r.Post("/login", uh.loginHandlerFunc(c.serverOptions...))
+		r.Post("/", uh.registerHandlerFunc())
+		r.Post("/login", uh.loginHandlerFunc())
 	})
 
 	api.Route("/user", func(r chi.Router) {
 		r.Use(middleware.Verifier(c.jwt))
 		r.Use(middleware.Authenticator)
 
-		r.Get("/", uh.getHandlerFunc(c.serverOptions...))
+		r.Get("/", uh.getHandlerFunc())
 
-		r.Put("/", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("not implemented yet")
-		})
+		r.Put("/", uh.profileHandlerFunc())
 	})
 
 	api.Route("/profiles", func(r chi.Router) {
 		// public
-		r.Get("/{username}", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("not implemented yet")
-		})
+		r.Get("/{username}", uh.profileHandlerFunc())
 
 		// auth required
 		auth := r.With(middleware.Verifier(c.jwt), middleware.Authenticator)

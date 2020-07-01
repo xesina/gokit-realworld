@@ -35,12 +35,14 @@ func (i Image) MarshalJSON() ([]byte, error) {
 
 // TODO: where should we put the validation? Should we have separate validation per domain model and transports?
 type User struct {
-	ID       int64
-	Username string
-	Email    string
-	Password string
-	Bio      Bio
-	Image    Image
+	ID         int64
+	Username   string
+	Email      string
+	Password   string
+	Bio        Bio
+	Image      Image
+	Followers  map[int64]struct{}
+	Followings map[int64]struct{}
 }
 
 func (u *User) HashPassword(plain string) (string, error) {
@@ -56,10 +58,23 @@ func (u *User) CheckPassword(plain string) bool {
 	return err == nil
 }
 
+func (u *User) IsFollower(target User) bool {
+	if u.Followings == nil {
+		return false
+	}
+
+	if _, ok := u.Followings[target.ID]; ok {
+		return true
+	}
+
+	return false
+}
+
 type UserService interface {
 	Register(user User) (*User, error)
 	Login(user User) (*User, error)
 	Get(user User) (*User, error)
+	GetProfile(user User) (*User, error)
 }
 
 type UserRepo interface {
@@ -67,6 +82,7 @@ type UserRepo interface {
 	Create(u User) (*User, error)
 	Get(e string) (*User, error)
 	GetByID(id int64) (*User, error)
+	GetByUsername(u string) (*User, error)
 }
 
 func UserAlreadyExistsError(email string) error {

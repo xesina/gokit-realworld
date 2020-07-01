@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-kit/kit/endpoint"
+	transport "github.com/go-kit/kit/transport/http"
 	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	realworld "github.com/xesina/go-kit-realworld-example-app"
@@ -17,14 +18,16 @@ import (
 )
 
 type UserHandler struct {
-	service realworld.UserService
-	jwt     *middleware.JWTAuth
+	service       realworld.UserService
+	jwt           *middleware.JWTAuth
+	serverOptions []transport.ServerOption
 }
 
-func NewUserHandler(s realworld.UserService, ja *middleware.JWTAuth) UserHandler {
+func NewUserHandler(c Context) UserHandler {
 	return UserHandler{
-		service: s,
-		jwt:     ja,
+		service:       c.userService,
+		jwt:           c.jwt,
+		serverOptions: c.serverOptions,
 	}
 }
 
@@ -176,6 +179,7 @@ func (req *userGetRequest) endpointRequest() user.GetRequest {
 
 func (h UserHandler) decodeGetRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	// TODO: handle unexpected errors
+	// TODO: move this to a middleware so inject the ID to the context directly
 	_, claims, err := middleware.FromContext(r.Context())
 	if err != nil {
 		return nil, err

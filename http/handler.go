@@ -6,29 +6,38 @@ import (
 	"net/http"
 )
 
-func (h UserHandler) registerHandlerFunc(opts ...transport.ServerOption) http.HandlerFunc {
+func (h UserHandler) registerHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		user.RegisterEndpoint(h.service),
 		h.decodeRegisterRequest,
 		h.encodeUserResponse,
-		opts...,
+		h.serverOptions...,
 	))
 }
 
-func (h UserHandler) loginHandlerFunc(opts ...transport.ServerOption) http.HandlerFunc {
+func (h UserHandler) loginHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		user.LoginEndpoint(h.service),
 		h.decodeLoginRequest,
 		h.encodeUserResponse,
-		opts...,
+		h.serverOptions...,
 	))
 }
 
-func (h UserHandler) getHandlerFunc(opts ...transport.ServerOption) http.HandlerFunc {
+func (h UserHandler) getHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		user.GetEndpoint(h.service),
 		h.decodeGetRequest,
 		h.encodeUserResponse,
-		opts...,
+		h.serverOptions...,
+	))
+}
+
+func (h UserHandler) profileHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		user.GetProfileEndpoint(h.service),
+		h.decodeProfileRequest,
+		h.encodeProfileResponse,
+		h.serverOptions...,
 	))
 }

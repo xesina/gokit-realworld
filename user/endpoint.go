@@ -34,8 +34,8 @@ func NewResponse(u *realworld.User, err error) Response {
 		ID:       u.ID,
 		Username: u.Username,
 		Email:    u.Email,
-		Bio:      realworld.Bio{},
-		Image:    realworld.Image{},
+		Bio:      u.Bio,
+		Image:    u.Image,
 		Err:      err,
 	}
 }
@@ -96,5 +96,51 @@ func GetEndpoint(s realworld.UserService) endpoint.Endpoint {
 			return nil, err
 		}
 		return NewResponse(u, err), nil
+	}
+}
+
+type ProfileRequest struct {
+	Username string
+	ViewerID int64
+}
+
+func (r ProfileRequest) toUser() realworld.User {
+	return realworld.User{
+		Username: r.Username,
+	}
+}
+
+type ProfileResponse struct {
+	ID        int64
+	Username  string
+	Bio       realworld.Bio
+	Image     realworld.Image
+	Following bool
+	Err       error
+}
+
+func NewProfileResponse(u *realworld.User, viewerID int64, err error) ProfileResponse {
+	return ProfileResponse{
+		ID:        u.ID,
+		Username:  u.Username,
+		Bio:       u.Bio,
+		Image:     u.Image,
+		Following: u.IsFollower(realworld.User{ID: viewerID}),
+		Err:       err,
+	}
+}
+
+func (r ProfileResponse) error() error { return r.Err }
+
+func (r ProfileResponse) Failed() error { return r.Err }
+
+func GetProfileEndpoint(s realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(ProfileRequest)
+		u, err := s.GetProfile(req.toUser())
+		if err != nil {
+			return nil, err
+		}
+		return NewProfileResponse(u, req.ViewerID, err), nil
 	}
 }

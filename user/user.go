@@ -33,3 +33,7 @@ func (s Service) Login(u realworld.User) (*realworld.User, error) {
 func (s Service) Get(u realworld.User) (*realworld.User, error) {
 	return s.Store.GetByID(u.ID)
 }
+
+func (s Service) GetProfile(user realworld.User) (*realworld.User, error) {
+	return s.Store.GetByUsername(user.Username)
+}
