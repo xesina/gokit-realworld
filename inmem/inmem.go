@@ -1,7 +1,6 @@
 package inmem
 
 import (
-	"errors"
 	realworld "github.com/xesina/go-kit-realworld-example-app"
 	"sync"
 	"sync/atomic"
@@ -35,7 +34,7 @@ func (store *memUserSaver) Create(u realworld.User) (*realworld.User, error) {
 func (store *memUserSaver) Get(e string) (*realworld.User, error) {
 	user, ok := store.m[e]
 	if !ok {
-		return nil, errors.New("user not found")
+		return nil, realworld.UserNotFoundError()
 	}
 	return &user, nil
 }

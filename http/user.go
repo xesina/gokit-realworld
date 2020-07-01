@@ -121,12 +121,7 @@ func (h UserHandler) encodeUserResponse(ctx context.Context, w http.ResponseWrit
 	middleware.SetIssuedNow(claims)
 	middleware.SetExpiryIn(claims, time.Hour*24*5)
 
-	_, tokenString, err := h.jwt.Encode(
-		jwt.MapClaims{
-			"id":  e.ID,
-			"exp": time.Now().Add(time.Hour * 72).Unix(),
-		},
-	)
+	_, tokenString, err := h.jwt.Encode(claims)
 
 	if err != nil {
 		return err
