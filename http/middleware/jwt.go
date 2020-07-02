@@ -60,8 +60,14 @@ func Verify(ja *JWTAuth, findTokenFns ...func(r *http.Request) string) func(http
 		hfn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			token, err := VerifyRequest(ja, r, findTokenFns...)
-			ctx = NewContext(ctx, token, err)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			// TODO: what happens if we add an empty context and get rid of this IF statement?
+			if token != nil {
+				ctx = NewContext(ctx, token, err)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
+			next.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(hfn)
 	}
@@ -81,8 +87,14 @@ func VerifyRequest(ja *JWTAuth, r *http.Request, findTokenFns ...func(r *http.Re
 		}
 	}
 
+	// We've made the token optional so that we always parse
+	// token if it's available.
+	//
+	//if tokenStr == "" {
+	//	return nil, ErrNoTokenFound
+	//}
 	if tokenStr == "" {
-		return nil, ErrNoTokenFound
+		return nil, nil
 	}
 
 	// Verify the token

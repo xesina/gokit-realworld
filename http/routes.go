@@ -12,13 +12,15 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 
 	api := r.Route("/api", nil)
 
+	// Always parse token if available
+	api.Use(middleware.Verifier(c.jwt))
+
 	api.Route("/users", func(r chi.Router) {
 		r.Post("/", uh.registerHandlerFunc())
 		r.Post("/login", uh.loginHandlerFunc())
 	})
 
 	api.Route("/user", func(r chi.Router) {
-		r.Use(middleware.Verifier(c.jwt))
 		r.Use(middleware.Authenticator)
 
 		r.Get("/", uh.getHandlerFunc())
@@ -31,10 +33,8 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		r.Get("/{username}", uh.profileHandlerFunc())
 
 		// auth required
-		auth := r.With(middleware.Verifier(c.jwt), middleware.Authenticator)
-		auth.Post("/{username}/follow", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("not implemented yet")
-		})
+		auth := r.With(middleware.Authenticator)
+		auth.Post("/{username}/follow", uh.followHandlerFunc())
 
 		auth.Delete("/{username}/follow", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("not implemented yet")
@@ -56,7 +56,7 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		})
 
 		// auth required
-		auth := r.With(middleware.Verifier(c.jwt), middleware.Authenticator)
+		auth := r.With(middleware.Authenticator)
 
 		auth.Post("/", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("CreateArticle not implemented yet")

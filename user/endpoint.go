@@ -144,3 +144,17 @@ func GetProfileEndpoint(s realworld.UserService) endpoint.Endpoint {
 		return NewProfileResponse(u, req.ViewerID, err), nil
 	}
 }
+
+func FollowEndpoint(s realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(ProfileRequest)
+		u, err := s.Follow(realworld.FollowRequest{
+			Followee: req.Username,
+			Follower: req.ViewerID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return NewProfileResponse(u, req.ViewerID, err), nil
+	}
+}

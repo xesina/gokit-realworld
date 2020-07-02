@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-kit/kit/endpoint"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	realworld "github.com/xesina/go-kit-realworld-example-app"
 	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
 	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
@@ -21,6 +20,7 @@ type profileRequest struct {
 func (req *profileRequest) bind(r *http.Request) error {
 	// TODO: handle unexpected errors
 	// TODO: move this to a middleware so inject the ID to the context directly
+
 	tk, claims, err := middleware.FromContext(r.Context())
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (req *profileRequest) validate() error {
 	return validation.ValidateStruct(
 		req,
 		validation.Field(&req.username, validation.Required, validation.Length(4, 50)),
-		validation.Field(&req.viewerID, is.Int),
+		validation.Field(&req.viewerID, validation.Min(1)),
 	)
 }
 

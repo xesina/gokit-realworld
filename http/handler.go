@@ -41,3 +41,12 @@ func (h UserHandler) profileHandlerFunc() http.HandlerFunc {
 		h.serverOptions...,
 	))
 }
+
+func (h UserHandler) followHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		user.FollowEndpoint(h.service),
+		h.decodeProfileRequest,
+		h.encodeProfileResponse,
+		h.serverOptions...,
+	))
+}

@@ -74,3 +74,27 @@ func (store *memUserSaver) GetByUsername(username string) (*realworld.User, erro
 	}
 	return &user, nil
 }
+
+func (store *memUserSaver) AddFollower(follower, followee int64) (*realworld.User, error)  {
+	followerUser, err := store.GetByID(follower)
+	if err != nil {
+		return nil, err
+	}
+	followeeUser, err := store.GetByID(followee)
+	if err != nil {
+		return nil, err
+	}
+
+	// We maybe need to do the following commands within a transaction if we are
+	// using a relational storage.
+
+	store.rwlock.Lock()
+	defer store.rwlock.Unlock()
+
+	// add follower
+	store.m[followeeUser.Email].Followers[follower] = struct{}{}
+	// add follower
+	store.m[followerUser.Email].Followings[followee] = struct{}{}
+
+	return followeeUser, nil
+}

@@ -37,3 +37,12 @@ func (s Service) Get(u realworld.User) (*realworld.User, error) {
 func (s Service) GetProfile(user realworld.User) (*realworld.User, error) {
 	return s.Store.GetByUsername(user.Username)
 }
+
+func (s Service) Follow(req realworld.FollowRequest) (*realworld.User, error) {
+	followee, err := s.Store.GetByUsername(req.Followee)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Store.AddFollower(req.Follower, followee.ID)
+}
