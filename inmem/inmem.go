@@ -33,6 +33,30 @@ func (store *memUserSaver) Create(u realworld.User) (*realworld.User, error) {
 	return &u, nil
 }
 
+func (store *memUserSaver) Update(u realworld.User) (*realworld.User, error) {
+	store.rwlock.Lock()
+	defer store.rwlock.Unlock()
+
+	old, ok := store.m[u.Email]
+	if !ok {
+		return nil, realworld.UserNotFoundError()
+	}
+
+	// TODO: I'm not sure if this is the best place to prevent followers/followings from change in update
+	u.Followers = old.Followers
+	u.Followings = old.Followings
+
+	store.m[u.Email] = u
+
+	// If user has changes her email we need to create a new map entry
+	// preserving ID as before and also delete the old email and entry
+	if u.Email != old.Email {
+		delete(store.m, old.Email)
+	}
+
+	return &u, nil
+}
+
 func (store *memUserSaver) Get(e string) (*realworld.User, error) {
 	user, ok := store.m[e]
 	if !ok {
@@ -75,7 +99,7 @@ func (store *memUserSaver) GetByUsername(username string) (*realworld.User, erro
 	return &user, nil
 }
 
-func (store *memUserSaver) AddFollower(follower, followee int64) (*realworld.User, error)  {
+func (store *memUserSaver) AddFollower(follower, followee int64) (*realworld.User, error) {
 	followerUser, err := store.GetByID(follower)
 	if err != nil {
 		return nil, err
@@ -93,8 +117,27 @@ func (store *memUserSaver) AddFollower(follower, followee int64) (*realworld.Use
 
 	// add follower
 	store.m[followeeUser.Email].Followers[follower] = struct{}{}
-	// add follower
+	// add followee
 	store.m[followerUser.Email].Followings[followee] = struct{}{}
+
+	return followeeUser, nil
+}
+
+func (store *memUserSaver) RemoveFollower(follower, followee int64) (*realworld.User, error) {
+	followerUser, err := store.GetByID(follower)
+	if err != nil {
+		return nil, err
+	}
+	followeeUser, err := store.GetByID(followee)
+	if err != nil {
+		return nil, err
+	}
+
+	store.rwlock.Lock()
+	defer store.rwlock.Unlock()
+
+	delete(store.m[followeeUser.Email].Followers, follower)
+	delete(store.m[followerUser.Email].Followings, followee)
 
 	return followeeUser, nil
 }

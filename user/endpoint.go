@@ -99,6 +99,38 @@ func GetEndpoint(s realworld.UserService) endpoint.Endpoint {
 	}
 }
 
+type UpdateRequest struct {
+	ID       int64
+	Username string
+	Password string
+	Email    string
+	Bio      realworld.Bio
+	Image    realworld.Image
+}
+
+func (r UpdateRequest) toUser() realworld.User {
+	return realworld.User{
+		ID:       r.ID,
+		Username: r.Username,
+		Email:    r.Email,
+		Password: r.Password,
+		Bio:      r.Bio,
+		Image:    r.Image,
+	}
+}
+
+func UpdateEndpoint(s realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(UpdateRequest)
+		u, err := s.Update(req.toUser())
+		if err != nil {
+			return nil, err
+		}
+		return NewResponse(u, err), nil
+	}
+
+}
+
 type ProfileRequest struct {
 	Username string
 	ViewerID int64
@@ -149,6 +181,20 @@ func FollowEndpoint(s realworld.UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(ProfileRequest)
 		u, err := s.Follow(realworld.FollowRequest{
+			Followee: req.Username,
+			Follower: req.ViewerID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return NewProfileResponse(u, req.ViewerID, err), nil
+	}
+}
+
+func UnfollowEndpoint(s realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(ProfileRequest)
+		u, err := s.Unfollow(realworld.FollowRequest{
 			Followee: req.Username,
 			Follower: req.ViewerID,
 		})

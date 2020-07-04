@@ -22,10 +22,8 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 
 	api.Route("/user", func(r chi.Router) {
 		r.Use(middleware.Authenticator)
-
 		r.Get("/", uh.getHandlerFunc())
-
-		r.Put("/", uh.profileHandlerFunc())
+		r.Put("/", uh.updateHandlerFunc())
 	})
 
 	api.Route("/profiles", func(r chi.Router) {
@@ -35,10 +33,7 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		// auth required
 		auth := r.With(middleware.Authenticator)
 		auth.Post("/{username}/follow", uh.followHandlerFunc())
-
-		auth.Delete("/{username}/follow", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("not implemented yet")
-		})
+		auth.Delete("/{username}/follow", uh.unfollowHandlerFunc())
 	})
 
 	api.Route("/articles", func(r chi.Router) {

@@ -194,3 +194,64 @@ func (h UserHandler) decodeGetRequest(_ context.Context, r *http.Request) (reque
 	er := req.endpointRequest()
 	return er, nil
 }
+
+func (h UserHandler) decodeUpdateRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	// TODO: handle unexpected errors
+	// TODO: move this to a middleware so inject the ID to the context directly
+	_, claims, err := middleware.FromContext(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	t := claims["id"].(float64)
+	id := int64(t)
+
+	var req updateRequest
+	if err := req.bind(r.Body); err != nil {
+		return nil, err
+	}
+	req.User.ID = id
+	er := req.endpointRequest()
+	return er, nil
+}
+
+type updateRequest struct {
+	User struct {
+		ID       int64
+		Username string          `json:"username"`
+		Email    string          `json:"email"`
+		Password string          `json:"password"`
+		Bio      realworld.Bio   `json:"bio"`
+		Image    realworld.Image `json:"image"`
+	} `json:"user"`
+}
+
+func (req *updateRequest) bind(r io.Reader) error {
+	if e := json.NewDecoder(r).Decode(&req); e != nil {
+		return httpError.NewError(http.StatusUnprocessableEntity, httpError.ErrRequestBody)
+	}
+
+	if err := req.validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (req *updateRequest) validate() error {
+	return validation.ValidateStruct(
+		&req.User,
+		validation.Field(&req.User.Username, validation.Required, validation.Length(4, 50)),
+		validation.Field(&req.User.Email, validation.Required, is.Email),
+		validation.Field(&req.User.Password, validation.Required, validation.Length(6, 50)),
+	)
+}
+
+func (req *updateRequest) endpointRequest() user.UpdateRequest {
+	return user.UpdateRequest{
+		ID:       req.User.ID,
+		Username: req.User.Username,
+		Password: req.User.Password,
+		Email:    req.User.Email,
+		Bio:      req.User.Bio,
+		Image:    req.User.Image,
+	}
+}

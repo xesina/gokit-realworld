@@ -5,11 +5,25 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 type Bio struct {
 	Value string
 	Valid bool
+}
+
+func (b *Bio) UnmarshalJSON(bytes []byte) error {
+	bio := string(bytes)
+	bio = strings.Trim(bio, `"`)
+	if strings.ToLower(bio) == "null" {
+		b.Valid = false
+		return nil
+	}
+
+	b.Valid = true
+	b.Value = bio
+	return nil
 }
 
 func (b Bio) MarshalJSON() ([]byte, error) {
@@ -23,6 +37,20 @@ func (b Bio) MarshalJSON() ([]byte, error) {
 type Image struct {
 	Value string
 	Valid bool
+}
+
+// TODO: check: if we can extract these methods to a generic methods/type and attach these to the type
+func (i *Image) UnmarshalJSON(bytes []byte) error {
+	image := string(bytes)
+	image = strings.Trim(image, `"`)
+	if strings.ToLower(image) == "null" {
+		i.Valid = false
+		return nil
+	}
+
+	i.Valid = true
+	i.Value = image
+	return nil
 }
 
 func (i Image) MarshalJSON() ([]byte, error) {
@@ -79,17 +107,21 @@ type UserService interface {
 	Register(user User) (*User, error)
 	Login(user User) (*User, error)
 	Get(user User) (*User, error)
+	Update(user User) (*User, error)
 	GetProfile(user User) (*User, error)
 	Follow(req FollowRequest) (*User, error)
+	Unfollow(req FollowRequest) (*User, error)
 }
 
 type UserRepo interface {
 	// TODO: should this return user? What if we assume this should only be a **write** command
 	Create(u User) (*User, error)
+	Update(u User) (*User, error)
 	Get(e string) (*User, error)
 	GetByID(id int64) (*User, error)
 	GetByUsername(u string) (*User, error)
 	AddFollower(follower, followee int64) (*User, error)
+	RemoveFollower(follower, followee int64) (*User, error)
 }
 
 func UserAlreadyExistsError(email string) error {

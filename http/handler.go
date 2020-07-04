@@ -33,6 +33,15 @@ func (h UserHandler) getHandlerFunc() http.HandlerFunc {
 	))
 }
 
+func (h UserHandler) updateHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		user.UpdateEndpoint(h.service),
+		h.decodeUpdateRequest,
+		h.encodeUserResponse,
+		h.serverOptions...,
+	))
+}
+
 func (h UserHandler) profileHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		user.GetProfileEndpoint(h.service),
@@ -45,6 +54,15 @@ func (h UserHandler) profileHandlerFunc() http.HandlerFunc {
 func (h UserHandler) followHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		user.FollowEndpoint(h.service),
+		h.decodeProfileRequest,
+		h.encodeProfileResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h UserHandler) unfollowHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		user.UnfollowEndpoint(h.service),
 		h.decodeProfileRequest,
 		h.encodeProfileResponse,
 		h.serverOptions...,

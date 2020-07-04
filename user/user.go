@@ -34,6 +34,12 @@ func (s Service) Get(u realworld.User) (*realworld.User, error) {
 	return s.Store.GetByID(u.ID)
 }
 
+func (s Service) Update(u realworld.User) (*realworld.User, error) {
+	// TODO: check: this is a full update. should I consider patching instead?
+	// TODO: check: where should I check if this user exists at all? in store or service impl?
+	return s.Store.Update(u)
+}
+
 func (s Service) GetProfile(user realworld.User) (*realworld.User, error) {
 	return s.Store.GetByUsername(user.Username)
 }
@@ -45,4 +51,13 @@ func (s Service) Follow(req realworld.FollowRequest) (*realworld.User, error) {
 	}
 
 	return s.Store.AddFollower(req.Follower, followee.ID)
+}
+
+func (s Service) Unfollow(req realworld.FollowRequest) (*realworld.User, error) {
+	followee, err := s.Store.GetByUsername(req.Followee)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Store.RemoveFollower(req.Follower, followee.ID)
 }
