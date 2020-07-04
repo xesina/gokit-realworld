@@ -8,8 +8,9 @@ import (
 )
 
 type Context struct {
-	router        *chi.Mux
-	jwt           *middleware.JWTAuth
-	serverOptions []transport.ServerOption
-	userService   realworld.UserService
+	router         *chi.Mux
+	jwt            *middleware.JWTAuth
+	serverOptions  []transport.ServerOption
+	userService    realworld.UserService
+	articleService realworld.ArticleService
 }

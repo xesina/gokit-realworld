@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func MakeHTTPHandler(userSrv realworld.UserService) http.Handler {
+func MakeHTTPHandler(userSrv realworld.UserService, articleSrv realworld.ArticleService) http.Handler {
 	var logger log.Logger
 	{
 		logger = log.NewLogfmtLogger(os.Stderr)
@@ -30,10 +30,11 @@ func MakeHTTPHandler(userSrv realworld.UserService) http.Handler {
 	r := chi.NewRouter()
 
 	c := Context{
-		router:        r,
-		jwt:           tokenAuth,
-		serverOptions: options,
-		userService:   userSrv,
+		router:         r,
+		jwt:            tokenAuth,
+		serverOptions:  options,
+		userService:    userSrv,
+		articleService: articleSrv,
 	}
 
 	RegisterRoutes(c, r)

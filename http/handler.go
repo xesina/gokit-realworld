@@ -2,6 +2,7 @@ package http
 
 import (
 	transport "github.com/go-kit/kit/transport/http"
+	"github.com/xesina/go-kit-realworld-example-app/article"
 	"github.com/xesina/go-kit-realworld-example-app/user"
 	"net/http"
 )
@@ -65,6 +66,24 @@ func (h UserHandler) unfollowHandlerFunc() http.HandlerFunc {
 		user.UnfollowEndpoint(h.service),
 		h.decodeProfileRequest,
 		h.encodeProfileResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) createHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.CreateEndpoint(h.service, h.userService),
+		h.decodeCreateRequest,
+		h.encodeArticleResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) deleteHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.DeleteEndpoint(h.service),
+		h.decodeDeleteRequest,
+		h.encodeDeleteResponse,
 		h.serverOptions...,
 	))
 }

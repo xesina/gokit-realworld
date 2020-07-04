@@ -91,7 +91,7 @@ func (u *User) CheckPassword(plain string) bool {
 	return err == nil
 }
 
-func (u *User) IsFollower(follower User) bool {
+func (u *User) IsFollower(follower *User) bool {
 	if u.Followers == nil {
 		return false
 	}

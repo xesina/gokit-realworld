@@ -9,6 +9,7 @@ import (
 
 func RegisterRoutes(c Context, r *chi.Mux) {
 	uh := NewUserHandler(c)
+	ah := NewArticleHandler(c)
 
 	api := r.Route("/api", nil)
 
@@ -53,18 +54,14 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		// auth required
 		auth := r.With(middleware.Authenticator)
 
-		auth.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("CreateArticle not implemented yet")
-		})
+		auth.Post("/", ah.createHandlerFunc())
 		auth.Get("/feed", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("Feed not implemented yet")
 		})
 		auth.Put("/{slug}", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("UpdateArticle not implemented yet")
 		})
-		auth.Delete("/{slug}", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("DeleteArticle not implemented yet")
-		})
+		auth.Delete("/{slug}", ah.deleteHandlerFunc())
 		auth.Post("/{slug}/comments", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("AddComment not implemented yet")
 		})

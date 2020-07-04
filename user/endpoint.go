@@ -157,7 +157,7 @@ func NewProfileResponse(u *realworld.User, viewerID int64, err error) ProfileRes
 		Username:  u.Username,
 		Bio:       u.Bio,
 		Image:     u.Image,
-		Following: u.IsFollower(realworld.User{ID: viewerID}),
+		Following: u.IsFollower(&realworld.User{ID: viewerID}),
 		Err:       err,
 	}
 }

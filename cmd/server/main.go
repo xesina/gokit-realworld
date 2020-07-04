@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/xesina/go-kit-realworld-example-app/article"
 	httpTransport "github.com/xesina/go-kit-realworld-example-app/http"
 	"github.com/xesina/go-kit-realworld-example-app/inmem"
 	"github.com/xesina/go-kit-realworld-example-app/user"
@@ -15,7 +16,10 @@ func main() {
 	inmemUserRepo := inmem.NewMemUserSaver()
 	userSrv := user.Service{Store: inmemUserRepo}
 
-	h := httpTransport.MakeHTTPHandler(userSrv)
+	inmemArticleRepo := inmem.NewMemArticleRepo()
+	articleSrv := article.Service{Store: inmemArticleRepo}
+
+	h := httpTransport.MakeHTTPHandler(userSrv, articleSrv)
 
 	errs := make(chan error)
 	go func() {
