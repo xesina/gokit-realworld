@@ -70,6 +70,7 @@ type ListRequest struct {
 
 type ArticleService interface {
 	Create(a Article) (*Article, error)
+	Update(slug string, a Article) (*Article, error)
 	Get(a Article) (*Article, error)
 	List(r ListRequest) ([]*Article, error)
 	Delete(a Article) error
@@ -84,6 +85,7 @@ type ArticleRepo interface {
 	Get(slug string) (*Article, error)
 	List(req ListRequest) ([]*Article, error)
 	Create(u Article) (*Article, error)
+	Update(slug string, u Article) (*Article, error)
 	Delete(u Article) error
 	AddFavorite(a Article, u User) (*Article, error)
 	RemoveFavorite(a Article, u User) (*Article, error)

@@ -121,6 +121,37 @@ func CreateEndpoint(a realworld.ArticleService, u realworld.UserService) endpoin
 	}
 }
 
+type UpdateRequest struct {
+	TargetSlug  string
+	Slug        string
+	UserID      int64
+	Title       string
+	Description string
+	Body        string
+}
+
+func (r UpdateRequest) toArticle() (a realworld.Article) {
+	a = realworld.Article{
+		Title:       r.Title,
+		Description: r.Description,
+		Body:        r.Body,
+	}
+	a.Author = realworld.User{ID: r.UserID}
+	a.Slug = a.MakeSlug()
+	return
+}
+
+func UpdateEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(UpdateRequest)
+		article, err := a.Update(req.TargetSlug, req.toArticle())
+		if err != nil {
+			return nil, err
+		}
+		return NewResponse(article, realworld.User{ID: req.UserID}, u, err), nil
+	}
+}
+
 type GetRequest struct {
 	UserID int64
 	Slug   string

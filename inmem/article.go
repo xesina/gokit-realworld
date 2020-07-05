@@ -37,6 +37,29 @@ func (store *memArticleRepo) Create(a realworld.Article) (*realworld.Article, er
 	return &a, nil
 }
 
+func (store *memArticleRepo) Update(slug string, a realworld.Article) (*realworld.Article, error) {
+	store.rwlock.Lock()
+	defer store.rwlock.Unlock()
+
+	old, ok := store.m[slug]
+	if !ok {
+		return nil, realworld.ArticleNotFoundError()
+	}
+
+	a.ID = old.ID
+	a.Comments = old.Comments
+	a.Favorites = old.Favorites
+	a.Tags = old.Tags
+	a.CreatedAt = old.CreatedAt
+	a.UpdatedAt = time.Now()
+
+	store.m[a.Slug] = a
+
+	delete(store.m, old.Slug)
+
+	return &a, nil
+}
+
 func (store *memArticleRepo) Delete(a realworld.Article) error {
 	store.rwlock.Lock()
 	defer store.rwlock.Unlock()

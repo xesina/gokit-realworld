@@ -106,6 +106,15 @@ func (h ArticleHandler) deleteHandlerFunc() http.HandlerFunc {
 	))
 }
 
+func (h ArticleHandler) updateHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.UpdateEndpoint(h.service, h.userService),
+		h.decodeUpdateRequest,
+		h.encodeArticleResponse,
+		h.serverOptions...,
+	))
+}
+
 func (h ArticleHandler) favoriteHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		article.FavoriteEndpoint(h.service, h.userService),

@@ -52,9 +52,7 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		auth.Get("/feed", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("Feed not implemented yet")
 		})
-		auth.Put("/{slug}", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("UpdateArticle not implemented yet")
-		})
+		auth.Put("/{slug}", ah.updateHandlerFunc())
 		auth.Delete("/{slug}", ah.deleteHandlerFunc())
 		auth.Post("/{slug}/comments", ah.addCommentHandlerFunc())
 		auth.Delete("/{slug}/comments/{id}", ah.deleteCommentHandlerFunc())

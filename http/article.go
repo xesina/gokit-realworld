@@ -411,3 +411,63 @@ func (h ArticleHandler) encodeArticleResponse(ctx context.Context, w http.Respon
 	e := response.(article.Response)
 	return jsonResponse(w, newArticleResponse(&e), http.StatusCreated)
 }
+
+type articleUpdateRequest struct {
+	userID  int64
+	slug    string
+	Article struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Body        string `json:"body"`
+	} `json:"article"`
+}
+
+func (req *articleUpdateRequest) bind(r *http.Request) error {
+	_, claims, err := middleware.FromContext(r.Context())
+	if err != nil {
+		return err
+	}
+
+	id := claims["id"].(float64)
+	req.userID = int64(id)
+
+	req.slug = chi.URLParam(r, "slug")
+
+	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
+		return httpError.NewError(http.StatusUnprocessableEntity, httpError.ErrRequestBody)
+	}
+
+	if err := req.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (req *articleUpdateRequest) validate() error {
+	return validation.ValidateStruct(
+		&req.Article,
+		validation.Field(&req.Article.Title, validation.Required),
+		validation.Field(&req.Article.Description, validation.Required),
+		validation.Field(&req.Article.Body, validation.Required),
+	)
+}
+
+func (req *articleUpdateRequest) endpointRequest() article.UpdateRequest {
+	return article.UpdateRequest{
+		TargetSlug:  req.slug,
+		UserID:      req.userID,
+		Title:       req.Article.Title,
+		Description: req.Article.Description,
+		Body:        req.Article.Body,
+	}
+}
+
+func (h ArticleHandler) decodeUpdateRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req articleUpdateRequest
+	if err := req.bind(r); err != nil {
+		return nil, err
+	}
+	er := req.endpointRequest()
+	return er, nil
+}

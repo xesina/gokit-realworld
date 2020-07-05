@@ -52,3 +52,7 @@ func (s Service) DeleteComment(c realworld.Comment) error {
 func (s Service) Comments(a realworld.Article) ([]*realworld.Comment, error) {
 	return s.Store.Comments(a)
 }
+
+func (s Service) Update(slug string, a realworld.Article) (*realworld.Article, error) {
+	return s.Store.Update(slug, a)
+}
