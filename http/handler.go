@@ -123,3 +123,30 @@ func (h ArticleHandler) unfavoriteHandlerFunc() http.HandlerFunc {
 		h.serverOptions...,
 	))
 }
+
+func (h ArticleHandler) addCommentHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.AddCommentEndpoint(h.service, h.userService),
+		h.decodeAddCommentRequest,
+		h.encodeCommentResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) commentsHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.CommentsEndpoint(h.service, h.userService),
+		h.decodeCommentsRequest,
+		h.encodeCommentsResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) deleteCommentHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.DeleteCommentEndpoint(h.service),
+		h.decodeDeleteCommentRequest,
+		h.encodeDeleteResponse,
+		h.serverOptions...,
+	))
+}

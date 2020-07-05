@@ -28,6 +28,8 @@ func (tt Tags) TagsList() (tagList []string) {
 	return
 }
 
+type Comments map[int64]Comment
+
 type Article struct {
 	ID          int64
 	Slug        string
@@ -35,7 +37,7 @@ type Article struct {
 	Description string
 	Body        string
 	Author      User
-	Comments    []Comment
+	Comments    Comments
 	Favorites   Favorites
 	Tags        Tags
 	CreatedAt   time.Time
@@ -73,6 +75,9 @@ type ArticleService interface {
 	Delete(a Article) error
 	Favorite(a Article, u User) (*Article, error)
 	Unfavorite(a Article, u User) (*Article, error)
+	AddComment(c Comment) (*Comment, error)
+	DeleteComment(c Comment) error
+	Comments(a Article) ([]*Comment, error)
 }
 
 type ArticleRepo interface {
@@ -82,15 +87,19 @@ type ArticleRepo interface {
 	Delete(u Article) error
 	AddFavorite(a Article, u User) (*Article, error)
 	RemoveFavorite(a Article, u User) (*Article, error)
+	AddComment(c Comment) (*Comment, error)
+	DeleteComment(c Comment) error
+	Comments(a Article) ([]*Comment, error)
 }
 
 type Comment struct {
 	ID        int64
 	Article   Article
 	ArticleID uint
-	User      User
-	UserID    uint
+	UserID    int64
 	Body      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Tag struct {

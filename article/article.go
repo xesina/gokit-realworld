@@ -40,3 +40,15 @@ func (s Service) Favorite(a realworld.Article, u realworld.User) (*realworld.Art
 func (s Service) Unfavorite(a realworld.Article, u realworld.User) (*realworld.Article, error) {
 	return s.Store.RemoveFavorite(a, u)
 }
+
+func (s Service) AddComment(c realworld.Comment) (*realworld.Comment, error) {
+	return s.Store.AddComment(c)
+}
+
+func (s Service) DeleteComment(c realworld.Comment) error {
+	return s.Store.DeleteComment(c)
+}
+
+func (s Service) Comments(a realworld.Article) ([]*realworld.Comment, error) {
+	return s.Store.Comments(a)
+}

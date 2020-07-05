@@ -43,9 +43,7 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 
 		r.Get("/{slug}", ah.getHandlerFunc())
 
-		r.Get("/{slug}/comments", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("GetComments not implemented yet")
-		})
+		r.Get("/{slug}/comments", ah.commentsHandlerFunc())
 
 		// auth required
 		auth := r.With(middleware.Authenticator)
@@ -58,12 +56,8 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 			json.NewEncoder(w).Encode("UpdateArticle not implemented yet")
 		})
 		auth.Delete("/{slug}", ah.deleteHandlerFunc())
-		auth.Post("/{slug}/comments", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("AddComment not implemented yet")
-		})
-		auth.Delete("/{slug}/comments/{id}", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("DeleteComment not implemented yet")
-		})
+		auth.Post("/{slug}/comments", ah.addCommentHandlerFunc())
+		auth.Delete("/{slug}/comments/{id}", ah.deleteCommentHandlerFunc())
 		auth.Post("/{slug}/favorite", ah.favoriteHandlerFunc())
 		auth.Delete("/{slug}/favorite", ah.unfavoriteHandlerFunc())
 

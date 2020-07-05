@@ -80,7 +80,7 @@ func NewResponse(a *realworld.Article, u realworld.User, userSrv realworld.UserS
 	author, err := userSrv.Get(a.Author)
 	if err != nil {
 		return Response{
-			Err:     err,
+			Err: err,
 		}
 	}
 
@@ -149,7 +149,9 @@ type ListResponse struct {
 	Err      error
 }
 
-func NewListResponse(articles []*realworld.Article, u *realworld.User, userSrv realworld.UserService, err error) ListResponse {
+func NewListResponse(
+	articles []*realworld.Article, u *realworld.User, userSrv realworld.UserService, err error,
+) ListResponse {
 	var listResponse ListResponse
 	for _, article := range articles {
 		author, err := userSrv.Get(realworld.User{ID: article.Author.ID})

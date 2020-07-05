@@ -29,6 +29,7 @@ func (store *memArticleRepo) Create(a realworld.Article) (*realworld.Article, er
 
 	a.ID = atomic.AddInt64(&store.counter, 1)
 	a.Favorites = make(realworld.Favorites, 0)
+	a.Comments = make(realworld.Comments, 0)
 	a.CreatedAt = time.Now()
 	a.UpdatedAt = time.Now()
 
