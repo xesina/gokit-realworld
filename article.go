@@ -7,9 +7,26 @@ import (
 	"time"
 )
 
-type Favorites map[int64]User
+type Favorites map[int64]struct{}
+
+func (ff Favorites) FavoritedBy(id int64) bool {
+	_, ok := ff[id]
+	return ok
+}
 
 type Tags map[string]Tag
+
+func (tt Tags) HasTag(t string) bool {
+	_, ok := tt[t]
+	return ok
+}
+
+func (tt Tags) TagsList() (tagList []string) {
+	for k, _ := range tt {
+		tagList = append(tagList, k)
+	}
+	return
+}
 
 type Article struct {
 	ID          int64
@@ -41,15 +58,30 @@ func (a Article) Favorited(id int64) bool {
 	return false
 }
 
+type ListRequest struct {
+	Tag         string
+	AuthorID    int64
+	FavoriterID int64
+	Offset      int
+	Limit       int
+}
+
 type ArticleService interface {
-	Create(u Article) (*Article, error)
-	Delete(u Article) error
+	Create(a Article) (*Article, error)
+	Get(a Article) (*Article, error)
+	List(r ListRequest) ([]*Article, error)
+	Delete(a Article) error
+	Favorite(a Article, u User) (*Article, error)
+	Unfavorite(a Article, u User) (*Article, error)
 }
 
 type ArticleRepo interface {
 	Get(slug string) (*Article, error)
+	List(req ListRequest) ([]*Article, error)
 	Create(u Article) (*Article, error)
 	Delete(u Article) error
+	AddFavorite(a Article, u User) (*Article, error)
+	RemoveFavorite(a Article, u User) (*Article, error)
 }
 
 type Comment struct {

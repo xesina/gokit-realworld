@@ -79,11 +79,47 @@ func (h ArticleHandler) createHandlerFunc() http.HandlerFunc {
 	))
 }
 
+func (h ArticleHandler) getHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.GetEndpoint(h.service, h.userService),
+		h.decodeGetRequest,
+		h.encodeArticleResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) listHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.ListEndpoint(h.service, h.userService),
+		h.decodeListRequest,
+		h.encodeArticlesResponse,
+		h.serverOptions...,
+	))
+}
+
 func (h ArticleHandler) deleteHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		article.DeleteEndpoint(h.service),
 		h.decodeDeleteRequest,
 		h.encodeDeleteResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) favoriteHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.FavoriteEndpoint(h.service, h.userService),
+		h.decodeFavoriteRequest,
+		h.encodeArticleResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) unfavoriteHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.UnfavoriteEndpoint(h.service, h.userService),
+		h.decodeFavoriteRequest,
+		h.encodeArticleResponse,
 		h.serverOptions...,
 	))
 }

@@ -36,7 +36,7 @@ func (r CreateRequest) toArticle() (a realworld.Article) {
 	return
 }
 
-type Response struct {
+type Article struct {
 	Slug           string
 	Title          string
 	Description    string
@@ -47,7 +47,11 @@ type Response struct {
 	Author         Author
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
-	Err            error
+}
+
+type Response struct {
+	Article
+	Err error
 }
 
 func (r Response) TagsList() (tt []string) {
@@ -65,24 +69,40 @@ type Author struct {
 	Following bool
 }
 
-func NewResponse(a *realworld.Article, u *realworld.User, err error) Response {
+func NewResponse(a *realworld.Article, u realworld.User, userSrv realworld.UserService, err error) Response {
+	viewer, err := userSrv.Get(u)
+	if err != nil {
+		return Response{
+			Err: err,
+		}
+	}
+
+	author, err := userSrv.Get(a.Author)
+	if err != nil {
+		return Response{
+			Err:     err,
+		}
+	}
+
 	return Response{
-		Slug:           a.Slug,
-		Title:          a.Title,
-		Description:    a.Description,
-		Body:           a.Body,
-		Tags:           a.Tags,
-		Favorited:      a.Favorited(u.ID),
-		FavoritesCount: len(a.Favorites),
-		Author: Author{
-			Username:  u.Username,
-			Bio:       u.Bio,
-			Image:     u.Image,
-			Following: u.IsFollower(u),
+		Article{
+			Slug:           a.Slug,
+			Title:          a.Title,
+			Description:    a.Description,
+			Body:           a.Body,
+			Tags:           a.Tags,
+			Favorited:      a.Favorited(viewer.ID),
+			FavoritesCount: len(a.Favorites),
+			Author: Author{
+				Username:  author.Username,
+				Bio:       author.Bio,
+				Image:     author.Image,
+				Following: author.IsFollower(viewer),
+			},
+			CreatedAt: a.CreatedAt,
+			UpdatedAt: a.UpdatedAt,
 		},
-		CreatedAt: a.CreatedAt,
-		UpdatedAt: a.UpdatedAt,
-		Err:       err,
+		err,
 	}
 }
 
@@ -97,11 +117,106 @@ func CreateEndpoint(a realworld.ArticleService, u realworld.UserService) endpoin
 		if err != nil {
 			return nil, err
 		}
+		return NewResponse(article, realworld.User{ID: req.UserID}, u, err), nil
+	}
+}
+
+type GetRequest struct {
+	UserID int64
+	Slug   string
+}
+
+func (r GetRequest) toArticle() (a realworld.Article) {
+	a = realworld.Article{
+		Slug: r.Slug,
+	}
+	return
+}
+
+func GetEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(GetRequest)
+		article, err := a.Get(req.toArticle())
+		if err != nil {
+			return nil, err
+		}
+		return NewResponse(article, realworld.User{ID: req.UserID}, u, err), nil
+	}
+}
+
+type ListResponse struct {
+	Articles []Article
+	Err      error
+}
+
+func NewListResponse(articles []*realworld.Article, u *realworld.User, userSrv realworld.UserService, err error) ListResponse {
+	var listResponse ListResponse
+	for _, article := range articles {
+		author, err := userSrv.Get(realworld.User{ID: article.Author.ID})
+		if err != nil {
+			return ListResponse{nil, err}
+		}
+
+		resp := Article{
+			Slug:           article.Slug,
+			Title:          article.Title,
+			Description:    article.Description,
+			Body:           article.Body,
+			Tags:           article.Tags,
+			Favorited:      article.Favorited(u.ID),
+			FavoritesCount: len(article.Favorites),
+			Author: Author{
+				Username:  author.Username,
+				Bio:       author.Bio,
+				Image:     author.Image,
+				Following: author.IsFollower(u),
+			},
+			CreatedAt: article.CreatedAt,
+			UpdatedAt: article.UpdatedAt,
+		}
+
+		listResponse.Articles = append(listResponse.Articles, resp)
+	}
+	listResponse.Err = err
+
+	return listResponse
+}
+
+func (r ListResponse) error() error { return r.Err }
+
+func (r ListResponse) Failed() error { return r.Err }
+
+type ListRequest struct {
+	UserID      int64
+	Tag         string
+	AuthorID    int64
+	FavoriterID int64
+	Limit       int
+	Offset      int
+}
+
+func (req ListRequest) serviceRequest() realworld.ListRequest {
+	return realworld.ListRequest{
+		Tag:         req.Tag,
+		AuthorID:    req.AuthorID,
+		FavoriterID: req.FavoriterID,
+		Offset:      req.Offset,
+		Limit:       req.Limit,
+	}
+}
+
+func ListEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(ListRequest)
+		aa, err := a.List(req.serviceRequest())
+		if err != nil {
+			return nil, err
+		}
 		user, err := u.Get(realworld.User{ID: req.UserID})
 		if err != nil {
 			return nil, err
 		}
-		return NewResponse(article, user, err), nil
+		return NewListResponse(aa, user, u, err), nil
 	}
 }
 
@@ -129,5 +244,42 @@ func DeleteEndpoint(a realworld.ArticleService) endpoint.Endpoint {
 			return nil, err
 		}
 		return DeleteResponse{}, nil
+	}
+}
+
+type FavoriteRequest struct {
+	UserID int64
+	Slug   string
+}
+
+func (r FavoriteRequest) toArticle() (a realworld.Article) {
+	a.Slug = r.Slug
+	return
+}
+
+func (r FavoriteRequest) toUser() (u realworld.User) {
+	u.ID = r.UserID
+	return
+}
+
+func FavoriteEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(FavoriteRequest)
+		article, err := a.Favorite(req.toArticle(), req.toUser())
+		if err != nil {
+			return nil, err
+		}
+		return NewResponse(article, realworld.User{ID: req.UserID}, u, err), nil
+	}
+}
+
+func UnfavoriteEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(FavoriteRequest)
+		article, err := a.Unfavorite(req.toArticle(), req.toUser())
+		if err != nil {
+			return nil, err
+		}
+		return NewResponse(article, realworld.User{ID: req.UserID}, u, err), nil
 	}
 }

@@ -55,3 +55,115 @@ func (store *memArticleRepo) Get(slug string) (*realworld.Article, error) {
 
 	return &article, nil
 }
+
+func (store *memArticleRepo) List(req realworld.ListRequest) ([]*realworld.Article, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	if len(store.m) == 0 {
+		return []*realworld.Article{}, nil
+	}
+
+	count := len(store.m)
+	orderedByIDs := make([]*realworld.Article, count)
+	for k, v := range store.m {
+		a := store.m[k]
+		orderedByIDs[v.ID-1] = &a
+	}
+
+	qualified := store.filterByTag(req.Tag, orderedByIDs)
+	qualified = store.filterByAuthorID(req.AuthorID, qualified)
+	qualified = store.filterByFavotiterID(req.FavoriterID, qualified)
+
+	offset, limit := 0, 20
+
+	if req.Offset > 0 {
+		offset = req.Limit
+	}
+	if req.Limit > 0 {
+		limit = req.Limit
+	}
+
+	var limited []*realworld.Article
+	for i := offset; i < limit; i++ {
+		if i >= len(qualified) {
+			break
+		}
+		limited = append(limited, qualified[i])
+	}
+
+	return limited, nil
+}
+
+func (store *memArticleRepo) filterByTag(tag string, articles []*realworld.Article) []*realworld.Article {
+	if tag == "" {
+		return articles
+	}
+
+	var qualified []*realworld.Article
+	for _, article := range articles {
+		if article.Tags.HasTag(tag) {
+			qualified = append(qualified, article)
+		}
+	}
+
+	return qualified
+}
+
+func (store *memArticleRepo) filterByAuthorID(id int64, articles []*realworld.Article) []*realworld.Article {
+	if id == 0 {
+		return articles
+	}
+
+	var qualified []*realworld.Article
+	for _, article := range articles {
+		if article.Author.ID == id {
+			qualified = append(qualified, article)
+		}
+	}
+
+	return qualified
+}
+
+func (store *memArticleRepo) filterByFavotiterID(id int64, articles []*realworld.Article) []*realworld.Article {
+	if id == 0 {
+		return articles
+	}
+
+	var qualified []*realworld.Article
+	for _, article := range articles {
+		if article.Favorites.FavoritedBy(id) {
+			qualified = append(qualified, article)
+		}
+	}
+
+	return qualified
+}
+
+func (store *memArticleRepo) AddFavorite(a realworld.Article, u realworld.User) (*realworld.Article, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	article, ok := store.m[a.Slug]
+	if !ok {
+		return nil, realworld.ArticleNotFoundError()
+	}
+
+	article.Favorites[u.ID] = struct{}{}
+
+	return &article, nil
+}
+
+func (store *memArticleRepo) RemoveFavorite(a realworld.Article, u realworld.User) (*realworld.Article, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	article, ok := store.m[a.Slug]
+	if !ok {
+		return nil, realworld.ArticleNotFoundError()
+	}
+
+	delete(article.Favorites, u.ID)
+
+	return &article, nil
+}

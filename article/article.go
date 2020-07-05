@@ -24,3 +24,19 @@ func (s Service) Delete(a realworld.Article) error {
 
 	return s.Store.Delete(a)
 }
+
+func (s Service) Get(a realworld.Article) (*realworld.Article, error) {
+	return s.Store.Get(a.Slug)
+}
+
+func (s Service) List(req realworld.ListRequest) ([]*realworld.Article, error) {
+	return s.Store.List(req)
+}
+
+func (s Service) Favorite(a realworld.Article, u realworld.User) (*realworld.Article, error) {
+	return s.Store.AddFavorite(a, u)
+}
+
+func (s Service) Unfavorite(a realworld.Article, u realworld.User) (*realworld.Article, error) {
+	return s.Store.RemoveFavorite(a, u)
+}

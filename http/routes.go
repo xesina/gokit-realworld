@@ -39,13 +39,9 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 
 	api.Route("/articles", func(r chi.Router) {
 		// public
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("Articles not implemented yet")
-		})
+		r.Get("/", ah.listHandlerFunc())
 
-		r.Get("/{slug}", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("GetArticle not implemented yet")
-		})
+		r.Get("/{slug}", ah.getHandlerFunc())
 
 		r.Get("/{slug}/comments", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("GetComments not implemented yet")
@@ -68,12 +64,8 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		auth.Delete("/{slug}/comments/{id}", func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode("DeleteComment not implemented yet")
 		})
-		auth.Post("/{slug}/favorite", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("Favorite not implemented yet")
-		})
-		auth.Delete("/{slug}/favorite", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("Unfavorite not implemented yet")
-		})
+		auth.Post("/{slug}/favorite", ah.favoriteHandlerFunc())
+		auth.Delete("/{slug}/favorite", ah.unfavoriteHandlerFunc())
 
 	})
 
