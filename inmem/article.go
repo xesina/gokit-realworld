@@ -2,6 +2,7 @@ package inmem
 
 import (
 	realworld "github.com/xesina/go-kit-realworld-example-app"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -55,7 +56,9 @@ func (store *memArticleRepo) Update(slug string, a realworld.Article) (*realworl
 
 	store.m[a.Slug] = a
 
-	delete(store.m, old.Slug)
+	if old.Slug != a.Slug {
+		delete(store.m, old.Slug)
+	}
 
 	return &a, nil
 }
@@ -90,9 +93,22 @@ func (store *memArticleRepo) List(req realworld.ListRequest) ([]*realworld.Artic
 
 	count := len(store.m)
 	orderedByIDs := make([]*realworld.Article, count)
-	for k, v := range store.m {
-		a := store.m[k]
-		orderedByIDs[v.ID-1] = &a
+	ids := make([]int, 0)
+
+	for _, v := range store.m {
+		ids = append(ids, int(v.ID))
+	}
+
+	sort.Ints(ids)
+	for i, id := range ids {
+		for k, a := range store.m {
+			if a.ID != int64(id) {
+				continue
+			}
+			a := store.m[k]
+			orderedByIDs[i] = &a
+			break
+		}
 	}
 
 	qualified := store.filterByTag(req.Tag, orderedByIDs)
@@ -129,9 +145,22 @@ func (store *memArticleRepo) Feed(req realworld.FeedRequest) ([]*realworld.Artic
 
 	count := len(store.m)
 	orderedByIDs := make([]*realworld.Article, count)
-	for k, v := range store.m {
-		a := store.m[k]
-		orderedByIDs[v.ID-1] = &a
+	ids := make([]int, 0)
+
+	for _, v := range store.m {
+		ids = append(ids, int(v.ID))
+	}
+
+	sort.Ints(ids)
+	for i, id := range ids {
+		for k, a := range store.m {
+			if a.ID != int64(id) {
+				continue
+			}
+			a := store.m[k]
+			orderedByIDs[i] = &a
+			break
+		}
 	}
 
 	qualified := make([]*realworld.Article, 0)

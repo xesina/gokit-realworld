@@ -156,7 +156,8 @@ func (req *userLoginRequest) validate() error {
 	return validation.ValidateStruct(
 		&req.User,
 		validation.Field(&req.User.Email, validation.Required, is.Email),
-		validation.Field(&req.User.Password, validation.Required, validation.Length(6, 50)),
+		// TODO: check for other way to have validations on password for user update
+		//validation.Field(&req.User.Password, validation.Required, validation.Length(6, 50)),
 	)
 }
 
@@ -241,7 +242,6 @@ func (req *updateRequest) validate() error {
 		&req.User,
 		validation.Field(&req.User.Username, validation.Required, validation.Length(4, 50)),
 		validation.Field(&req.User.Email, validation.Required, is.Email),
-		validation.Field(&req.User.Password, validation.Required, validation.Length(6, 50)),
 	)
 }
 

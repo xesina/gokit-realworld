@@ -37,11 +37,13 @@ func (s Service) Get(u realworld.User) (*realworld.User, error) {
 func (s Service) Update(u realworld.User) (*realworld.User, error) {
 	// TODO: check: this is a full update. should I consider patching instead?
 	// TODO: check: where should I check if this user exists at all? in store or service impl?
-	hashed, err := u.HashPassword(u.Password)
-	if err != nil {
-		return nil, realworld.InternalError(err)
+	if u.Password != "" {
+		hashed, err := u.HashPassword(u.Password)
+		if err != nil {
+			return nil, realworld.InternalError(err)
+		}
+		u.Password = hashed
 	}
-	u.Password = hashed
 
 	return s.Store.Update(u)
 }

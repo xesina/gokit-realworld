@@ -105,6 +105,8 @@ func newDomainError(err realworld.Error) (e Error) {
 
 func mapDomainErrorCode(code string) int {
 	switch code {
+	case realworld.EIncorrectPassword:
+		return http.StatusForbidden
 	case realworld.EConflict:
 		return http.StatusUnprocessableEntity
 	case realworld.ENotFound:

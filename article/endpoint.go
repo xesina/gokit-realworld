@@ -70,11 +70,15 @@ type Author struct {
 }
 
 func NewResponse(a *realworld.Article, u realworld.User, userSrv realworld.UserService, err error) Response {
-	viewer, err := userSrv.Get(u)
-	if err != nil {
-		return Response{
-			Err: err,
+	var viewerID int64
+	if u.ID > 0 {
+		vu, err := userSrv.Get(u)
+		if err != nil {
+			return Response{
+				Err: err,
+			}
 		}
+		viewerID = vu.ID
 	}
 
 	author, err := userSrv.Get(a.Author)
@@ -91,13 +95,13 @@ func NewResponse(a *realworld.Article, u realworld.User, userSrv realworld.UserS
 			Description:    a.Description,
 			Body:           a.Body,
 			Tags:           a.Tags,
-			Favorited:      a.Favorited(viewer.ID),
+			Favorited:      a.Favorited(viewerID),
 			FavoritesCount: len(a.Favorites),
 			Author: Author{
 				Username:  author.Username,
 				Bio:       author.Bio,
 				Image:     author.Image,
-				Following: author.IsFollower(viewer),
+				Following: author.IsFollower(&realworld.User{ID: viewerID}),
 			},
 			CreatedAt: a.CreatedAt,
 			UpdatedAt: a.UpdatedAt,
@@ -245,9 +249,12 @@ func ListEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.
 		if err != nil {
 			return nil, err
 		}
-		user, err := u.Get(realworld.User{ID: req.UserID})
-		if err != nil {
-			return nil, err
+		var user *realworld.User
+		if req.UserID > 0 {
+			user, err = u.Get(realworld.User{ID: req.UserID})
+			if err != nil {
+				return nil, err
+			}
 		}
 		return NewListResponse(aa, user, u, err), nil
 	}

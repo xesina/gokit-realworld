@@ -42,6 +42,11 @@ func (store *memUserSaver) Update(u realworld.User) (*realworld.User, error) {
 		return nil, realworld.UserNotFoundError()
 	}
 
+	// TODO: should we do this password related thing in storage!?
+	if u.Password == "" {
+		u.Password = old.Password
+	}
+
 	// TODO: I'm not sure if this is the best place to prevent followers/followings from change in update
 	u.Followers = old.Followers
 	u.Followings = old.Followings

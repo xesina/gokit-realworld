@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/go-chi/chi"
+	chimiddleware "github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-kit/kit/log"
 	kitTransport "github.com/go-kit/kit/transport"
 	transport "github.com/go-kit/kit/transport/http"
@@ -28,6 +30,14 @@ func MakeHTTPHandler(userSrv realworld.UserService, articleSrv realworld.Article
 	tokenAuth := middleware.New("HS256", []byte("secret"), nil)
 
 	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"HEAD", "GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders: []string{"Link"},
+	}))
+
+	r.Use(chimiddleware.Logger)
 
 	c := Context{
 		router:         r,

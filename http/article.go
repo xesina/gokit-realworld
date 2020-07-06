@@ -201,13 +201,15 @@ type getRequest struct {
 }
 
 func (req *getRequest) bind(r *http.Request) error {
-	_, claims, err := middleware.FromContext(r.Context())
+	token, claims, err := middleware.FromContext(r.Context())
 	if err != nil {
 		return err
 	}
 
-	id := claims["id"].(float64)
-	req.userID = int64(id)
+	if token != nil {
+		id := claims["id"].(float64)
+		req.userID = int64(id)
+	}
 
 	req.slug = chi.URLParam(r, "slug")
 
@@ -299,13 +301,15 @@ type listRequest struct {
 }
 
 func (req *listRequest) bind(r *http.Request) error {
-	_, claims, err := middleware.FromContext(r.Context())
+	token, claims, err := middleware.FromContext(r.Context())
 	if err != nil {
 		return err
 	}
 
-	id := claims["id"].(float64)
-	req.userID = int64(id)
+	if token != nil {
+		id := claims["id"].(float64)
+		req.userID = int64(id)
+	}
 
 	req.tag = r.URL.Query().Get("tag")
 	req.author = r.URL.Query().Get("author")
