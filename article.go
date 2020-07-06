@@ -68,22 +68,32 @@ type ListRequest struct {
 	Limit       int
 }
 
+type FeedRequest struct {
+	UserID       int64
+	FollowingIDs []int64
+	Limit        int
+	Offset       int
+}
+
 type ArticleService interface {
 	Create(a Article) (*Article, error)
 	Update(slug string, a Article) (*Article, error)
 	Get(a Article) (*Article, error)
 	List(r ListRequest) ([]*Article, error)
+	Feed(r FeedRequest) ([]*Article, error)
 	Delete(a Article) error
 	Favorite(a Article, u User) (*Article, error)
 	Unfavorite(a Article, u User) (*Article, error)
 	AddComment(c Comment) (*Comment, error)
 	DeleteComment(c Comment) error
 	Comments(a Article) ([]*Comment, error)
+	Tags() ([]*Tag, error)
 }
 
 type ArticleRepo interface {
 	Get(slug string) (*Article, error)
 	List(req ListRequest) ([]*Article, error)
+	Feed(req FeedRequest) ([]*Article, error)
 	Create(u Article) (*Article, error)
 	Update(slug string, u Article) (*Article, error)
 	Delete(u Article) error
@@ -92,6 +102,7 @@ type ArticleRepo interface {
 	AddComment(c Comment) (*Comment, error)
 	DeleteComment(c Comment) error
 	Comments(a Article) ([]*Comment, error)
+	Tags() ([]*Tag, error)
 }
 
 type Comment struct {

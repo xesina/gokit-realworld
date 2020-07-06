@@ -33,6 +33,10 @@ func (s Service) List(req realworld.ListRequest) ([]*realworld.Article, error) {
 	return s.Store.List(req)
 }
 
+func (s Service) Feed(req realworld.FeedRequest) ([]*realworld.Article, error) {
+	return s.Store.Feed(req)
+}
+
 func (s Service) Favorite(a realworld.Article, u realworld.User) (*realworld.Article, error) {
 	return s.Store.AddFavorite(a, u)
 }
@@ -55,4 +59,8 @@ func (s Service) Comments(a realworld.Article) ([]*realworld.Comment, error) {
 
 func (s Service) Update(slug string, a realworld.Article) (*realworld.Article, error) {
 	return s.Store.Update(slug, a)
+}
+
+func (s Service) Tags() ([]*realworld.Tag, error) {
+	return s.Store.Tags()
 }

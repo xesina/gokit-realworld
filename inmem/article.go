@@ -119,6 +119,46 @@ func (store *memArticleRepo) List(req realworld.ListRequest) ([]*realworld.Artic
 	return limited, nil
 }
 
+func (store *memArticleRepo) Feed(req realworld.FeedRequest) ([]*realworld.Article, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	if len(store.m) == 0 {
+		return []*realworld.Article{}, nil
+	}
+
+	count := len(store.m)
+	orderedByIDs := make([]*realworld.Article, count)
+	for k, v := range store.m {
+		a := store.m[k]
+		orderedByIDs[v.ID-1] = &a
+	}
+
+	qualified := make([]*realworld.Article, 0)
+	for _, authorID := range req.FollowingIDs {
+		qualified = append(qualified, store.filterByAuthorID(authorID, orderedByIDs)...)
+	}
+
+	offset, limit := 0, 20
+
+	if req.Offset > 0 {
+		offset = req.Limit
+	}
+	if req.Limit > 0 {
+		limit = req.Limit
+	}
+
+	var limited []*realworld.Article
+	for i := offset; i < limit; i++ {
+		if i >= len(qualified) {
+			break
+		}
+		limited = append(limited, qualified[i])
+	}
+
+	return limited, nil
+}
+
 func (store *memArticleRepo) filterByTag(tag string, articles []*realworld.Article) []*realworld.Article {
 	if tag == "" {
 		return articles
@@ -190,4 +230,23 @@ func (store *memArticleRepo) RemoveFavorite(a realworld.Article, u realworld.Use
 	delete(article.Favorites, u.ID)
 
 	return &article, nil
+}
+
+func (store *memArticleRepo) Tags() ([]*realworld.Tag, error) {
+	tags := make(map[string]struct{})
+	tt := make([]*realworld.Tag, 0)
+
+	for _, a := range store.m {
+		for _, tag := range a.Tags {
+			if _, ok := tags[tag.Tag]; ok {
+				continue
+			}
+
+			tags[tag.Tag] = struct{}{}
+			t := tag
+			tt = append(tt, &t)
+		}
+	}
+
+	return tt, nil
 }

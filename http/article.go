@@ -412,6 +412,54 @@ func (h ArticleHandler) encodeArticleResponse(ctx context.Context, w http.Respon
 	return jsonResponse(w, newArticleResponse(&e), http.StatusCreated)
 }
 
+type feedRequest struct {
+	userID int64
+	limit  int
+	offset int
+}
+
+func (req *feedRequest) endpointRequest() realworld.FeedRequest {
+	return realworld.FeedRequest{
+		UserID: req.userID,
+		Limit:  req.limit,
+		Offset: req.offset,
+	}
+}
+
+func (req *feedRequest) bind(r *http.Request) error {
+	_, claims, err := middleware.FromContext(r.Context())
+	if err != nil {
+		return err
+	}
+
+	id := claims["id"].(float64)
+	req.userID = int64(id)
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 0
+	}
+	req.limit = limit
+
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+	req.offset = offset
+
+	return nil
+}
+
+func (h ArticleHandler) decodeFeedRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req feedRequest
+	if err := req.bind(r); err != nil {
+		return nil, err
+	}
+
+	er := req.endpointRequest()
+	return er, nil
+}
+
 type articleUpdateRequest struct {
 	userID  int64
 	slug    string
@@ -470,4 +518,30 @@ func (h ArticleHandler) decodeUpdateRequest(_ context.Context, r *http.Request) 
 	}
 	er := req.endpointRequest()
 	return er, nil
+}
+
+type tagsResponse struct {
+	Tags []string `json:"tags"`
+}
+
+func newTagsResponse(r article.TagsResponse) (resp tagsResponse) {
+	resp.Tags = make([]string, 0)
+	for _, t := range r.Tags {
+		resp.Tags = append(resp.Tags, t.Tag)
+	}
+	return
+}
+
+func (h ArticleHandler) decodeTagsRequest(_ context.Context, _ *http.Request) (request interface{}, err error) {
+	er := article.TagsRequest{}
+	return er, nil
+}
+
+func (h ArticleHandler) encodeTagsResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if resp, ok := response.(endpoint.Failer); ok && resp.Failed() != nil {
+		httpError.EncodeError(ctx, resp.Failed(), w)
+		return nil
+	}
+	e := response.(article.TagsResponse)
+	return jsonResponse(w, newTagsResponse(e), http.StatusCreated)
 }

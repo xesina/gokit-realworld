@@ -66,6 +66,16 @@ type FollowRequest struct {
 	Follower int64
 }
 
+type Follows map[int64]struct{}
+
+func (ff Follows) List() (l []int64) {
+	l = make([]int64, 0)
+	for f, _ := range ff {
+		l = append(l, f)
+	}
+	return
+}
+
 // TODO: where should we put the validation? Should we have separate validation per domain model and transports?
 type User struct {
 	ID         int64
@@ -74,8 +84,8 @@ type User struct {
 	Password   string
 	Bio        Bio
 	Image      Image
-	Followers  map[int64]struct{}
-	Followings map[int64]struct{}
+	Followers  Follows
+	Followings Follows
 }
 
 func (u *User) HashPassword(plain string) (string, error) {

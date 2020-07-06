@@ -97,6 +97,15 @@ func (h ArticleHandler) listHandlerFunc() http.HandlerFunc {
 	))
 }
 
+func (h ArticleHandler) feedHandlerFunc() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.FeedEndpoint(h.service, h.userService),
+		h.decodeFeedRequest,
+		h.encodeArticlesResponse,
+		h.serverOptions...,
+	))
+}
+
 func (h ArticleHandler) deleteHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		article.DeleteEndpoint(h.service),
@@ -156,6 +165,15 @@ func (h ArticleHandler) deleteCommentHandlerFunc() http.HandlerFunc {
 		article.DeleteCommentEndpoint(h.service),
 		h.decodeDeleteCommentRequest,
 		h.encodeDeleteResponse,
+		h.serverOptions...,
+	))
+}
+
+func (h ArticleHandler) tagsHandler() http.HandlerFunc {
+	return wrapHandler(transport.NewServer(
+		article.TagsEndpoint(h.service),
+		h.decodeTagsRequest,
+		h.encodeTagsResponse,
 		h.serverOptions...,
 	))
 }

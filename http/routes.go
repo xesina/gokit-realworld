@@ -1,10 +1,8 @@
 package http
 
 import (
-	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
-	"net/http"
 )
 
 func RegisterRoutes(c Context, r *chi.Mux) {
@@ -49,9 +47,7 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 		auth := r.With(middleware.Authenticator)
 
 		auth.Post("/", ah.createHandlerFunc())
-		auth.Get("/feed", func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode("Feed not implemented yet")
-		})
+		auth.Get("/feed", ah.feedHandlerFunc())
 		auth.Put("/{slug}", ah.updateHandlerFunc())
 		auth.Delete("/{slug}", ah.deleteHandlerFunc())
 		auth.Post("/{slug}/comments", ah.addCommentHandlerFunc())
@@ -61,7 +57,5 @@ func RegisterRoutes(c Context, r *chi.Mux) {
 
 	})
 
-	api.Get("/tags", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode("Tags not implemented yet")
-	})
+	api.Get("/tags", ah.tagsHandler())
 }

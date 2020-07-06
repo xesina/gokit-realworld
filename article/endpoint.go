@@ -316,3 +316,44 @@ func UnfavoriteEndpoint(a realworld.ArticleService, u realworld.UserService) end
 		return NewResponse(article, realworld.User{ID: req.UserID}, u, err), nil
 	}
 }
+
+type TagsRequest struct{}
+
+type TagsResponse struct {
+	Tags []*realworld.Tag
+	Err  error
+}
+
+func (r TagsResponse) error() error { return r.Err }
+
+func (r TagsResponse) Failed() error { return r.Err }
+
+func TagsEndpoint(a realworld.ArticleService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		_ = request.(TagsRequest)
+		tt, err := a.Tags()
+		if err != nil {
+			return nil, err
+		}
+		return TagsResponse{
+			Tags: tt,
+			Err:  err,
+		}, nil
+	}
+}
+
+func FeedEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(realworld.FeedRequest)
+		user, err := u.Get(realworld.User{ID: req.UserID})
+		if err != nil {
+			return nil, err
+		}
+		req.FollowingIDs = user.Followings.List()
+		aa, err := a.Feed(req)
+		if err != nil {
+			return nil, err
+		}
+		return NewListResponse(aa, user, u, err), nil
+	}
+}
