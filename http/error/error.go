@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-ozzo/ozzo-validation/v4"
-	realworld "github.com/xesina/go-kit-realworld-example-app"
+	realworld "github.com/xesina/gokit-realworld"
 	"net/http"
 )
 

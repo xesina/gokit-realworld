@@ -5,10 +5,10 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-kit/kit/endpoint"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	realworld "github.com/xesina/go-kit-realworld-example-app"
-	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
-	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
-	"github.com/xesina/go-kit-realworld-example-app/user"
+	realworld "github.com/xesina/gokit-realworld"
+	httpError "github.com/xesina/gokit-realworld/http/error"
+	"github.com/xesina/gokit-realworld/http/middleware"
+	"github.com/xesina/gokit-realworld/user"
 	"net/http"
 )
 

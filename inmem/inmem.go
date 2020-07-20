@@ -1,7 +1,7 @@
 package inmem
 
 import (
-	realworld "github.com/xesina/go-kit-realworld-example-app"
+	realworld "github.com/xesina/gokit-realworld"
 	"sync"
 	"sync/atomic"
 )

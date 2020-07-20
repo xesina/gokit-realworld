@@ -2,8 +2,8 @@ package http
 
 import (
 	transport "github.com/go-kit/kit/transport/http"
-	"github.com/xesina/go-kit-realworld-example-app/article"
-	"github.com/xesina/go-kit-realworld-example-app/user"
+	"github.com/xesina/gokit-realworld/article"
+	"github.com/xesina/gokit-realworld/user"
 	"net/http"
 )
 

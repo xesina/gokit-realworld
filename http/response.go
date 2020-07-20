@@ -3,8 +3,8 @@ package http
 import (
 	"context"
 	"encoding/json"
-	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
-	"github.com/xesina/go-kit-realworld-example-app/user"
+	httpError "github.com/xesina/gokit-realworld/http/error"
+	"github.com/xesina/gokit-realworld/user"
 	"net/http"
 )
 

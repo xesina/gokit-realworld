@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/jinzhu/gorm"
-	realworld "github.com/xesina/go-kit-realworld-example-app"
+	realworld "github.com/xesina/gokit-realworld"
 )
 
 type User struct {

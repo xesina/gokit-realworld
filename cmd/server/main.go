@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/xesina/go-kit-realworld-example-app/article"
-	httpTransport "github.com/xesina/go-kit-realworld-example-app/http"
-	"github.com/xesina/go-kit-realworld-example-app/sqlite"
-	"github.com/xesina/go-kit-realworld-example-app/user"
+	"github.com/xesina/gokit-realworld/article"
+	httpTransport "github.com/xesina/gokit-realworld/http"
+	"github.com/xesina/gokit-realworld/sqlite"
+	"github.com/xesina/gokit-realworld/user"
 	"net/http"
 	"os"
 	"os/signal"

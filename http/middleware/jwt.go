@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
+	httpError "github.com/xesina/gokit-realworld/http/error"
 	"net/http"
 	"strings"
 	"time"

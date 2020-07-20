@@ -1,4 +1,4 @@
-package go_kit_realworld_example_app
+package gokit_realworld
 
 import (
 	"github.com/stretchr/testify/assert"

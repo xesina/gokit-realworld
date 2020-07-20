@@ -3,8 +3,8 @@ package http
 import (
 	"github.com/go-chi/chi"
 	transport "github.com/go-kit/kit/transport/http"
-	realworld "github.com/xesina/go-kit-realworld-example-app"
-	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
+	realworld "github.com/xesina/gokit-realworld"
+	"github.com/xesina/gokit-realworld/http/middleware"
 )
 
 type Context struct {

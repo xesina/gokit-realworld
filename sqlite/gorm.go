@@ -3,7 +3,7 @@ package sqlite
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	realworld "github.com/xesina/go-kit-realworld-example-app"
+	realworld "github.com/xesina/gokit-realworld"
 	"time"
 )
 

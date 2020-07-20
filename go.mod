@@ -1,4 +1,4 @@
-module github.com/xesina/go-kit-realworld-example-app
+module github.com/xesina/gokit-realworld
 
 go 1.14
 

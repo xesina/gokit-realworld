@@ -13,7 +13,7 @@ build-static:
 	CGO_ENABLED=0 go build -race -v -o $(APP) -a -installsuffix cgo -ldflags $(LDFLAGS) .
 
 run:
-	go run -race .
+	cd cmd/server && go run -race .
 
 ############################################################
 # Test
@@ -23,10 +23,10 @@ test:
 	go test -v -race ./...
 
 container:
-	docker build -t echo-realworld .
+	docker build -t gokit-realworld .
 
 run-container:
-	docker run --rm -it echo-realworld
+	docker run --rm -it gokit-realworld
 
 .PHONY: build run build-static test container
 

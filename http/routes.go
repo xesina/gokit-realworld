@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/go-chi/chi"
-	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
+	"github.com/xesina/gokit-realworld/http/middleware"
 )
 
 func RegisterRoutes(c Context, r *chi.Mux) {

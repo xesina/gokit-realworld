@@ -7,9 +7,9 @@ import (
 	"github.com/go-kit/kit/log"
 	kitTransport "github.com/go-kit/kit/transport"
 	transport "github.com/go-kit/kit/transport/http"
-	realworld "github.com/xesina/go-kit-realworld-example-app"
-	httpError "github.com/xesina/go-kit-realworld-example-app/http/error"
-	"github.com/xesina/go-kit-realworld-example-app/http/middleware"
+	realworld "github.com/xesina/gokit-realworld"
+	httpError "github.com/xesina/gokit-realworld/http/error"
+	"github.com/xesina/gokit-realworld/http/middleware"
 	"net/http"
 	"os"
 )

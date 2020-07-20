@@ -23,7 +23,7 @@ COPY . /src
 # Put built binaries and runtime resources in /app dir ready to be copied over or used.
 RUN go install -installsuffix cgo -ldflags="-w -s" && \
     mkdir -p /app && \
-    cp -r $GOPATH/bin/golang-echo-realworld-example-app /app/
+    cp -r $GOPATH/bin/gokit-realworld /app/
 
 #
 # 2. Runtime Container
@@ -53,4 +53,4 @@ COPY --from=build /app /app/
 
 EXPOSE 8585
 
-CMD ["./golang-echo-realworld-example-app"]
+CMD ["./gokit-realworld"]
