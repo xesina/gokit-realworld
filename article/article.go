@@ -20,8 +20,8 @@ func (s Service) Get(a realworld.Article) (*realworld.Article, error) {
 	return s.Repo.Get(a.Slug)
 }
 
-func (s Service) List(req realworld.ListRequest) ([]*realworld.Article, int,  error) {
-	switch  {
+func (s Service) List(req realworld.ListRequest) ([]*realworld.Article, int, error) {
+	switch {
 	case req.Tag != "":
 		return s.Repo.ListByTag(req.Tag, req.Offset, req.Limit)
 	case req.FavoriterID != 0:
@@ -33,7 +33,7 @@ func (s Service) List(req realworld.ListRequest) ([]*realworld.Article, int,  er
 	}
 }
 
-func (s Service) Feed(req realworld.FeedRequest) ([]*realworld.Article, int,  error) {
+func (s Service) Feed(req realworld.FeedRequest) ([]*realworld.Article, int, error) {
 	return s.Repo.Feed(req)
 }
 
