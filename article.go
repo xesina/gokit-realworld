@@ -2,9 +2,13 @@ package go_kit_realworld_example_app
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gosimple/slug"
 	"time"
+)
+
+var (
+	ErrArticleNotFound      = Error{ENotFound, errors.New("article not found")}
+	ErrArticleAlreadyExists = Error{EConflict, errors.New("article already exists")}
 )
 
 type Favorites map[int64]struct{}
@@ -22,6 +26,7 @@ func (tt Tags) HasTag(t string) bool {
 }
 
 func (tt Tags) TagsList() (tagList []string) {
+	tagList = make([]string, 0)
 	for k, _ := range tt {
 		tagList = append(tagList, k)
 	}
@@ -79,8 +84,8 @@ type ArticleService interface {
 	Create(a Article) (*Article, error)
 	Update(slug string, a Article) (*Article, error)
 	Get(a Article) (*Article, error)
-	List(r ListRequest) ([]*Article, error)
-	Feed(r FeedRequest) ([]*Article, error)
+	List(r ListRequest) ([]*Article, int, error)
+	Feed(r FeedRequest) ([]*Article, int, error)
 	Delete(a Article) error
 	Favorite(a Article, u User) (*Article, error)
 	Unfavorite(a Article, u User) (*Article, error)
@@ -92,8 +97,11 @@ type ArticleService interface {
 
 type ArticleRepo interface {
 	Get(slug string) (*Article, error)
-	List(req ListRequest) ([]*Article, error)
-	Feed(req FeedRequest) ([]*Article, error)
+	List(offset, limit int) ([]*Article, int, error)
+	ListByTag(tag string, offset, limit int) ([]*Article, int, error)
+	ListByAuthorID(id int64, offset, limit int) ([]*Article, int, error)
+	ListByFavoriterID(id int64, offset, limit int) ([]*Article, int, error)
+	Feed(req FeedRequest) ([]*Article, int, error)
 	Create(u Article) (*Article, error)
 	Update(slug string, u Article) (*Article, error)
 	Delete(u Article) error
@@ -108,7 +116,7 @@ type ArticleRepo interface {
 type Comment struct {
 	ID        int64
 	Article   Article
-	ArticleID uint
+	ArticleID int64
 	UserID    int64
 	Body      string
 	CreatedAt time.Time
@@ -119,18 +127,4 @@ type Tag struct {
 	ID       int64
 	Tag      string
 	Articles []Article
-}
-
-func ArticleAlreadyExistsError(slug string) error {
-	return Error{
-		Code: EConflict,
-		Err:  fmt.Errorf("article with slug: %s already exists", slug),
-	}
-}
-
-func ArticleNotFoundError() error {
-	return Error{
-		Code: ENotFound,
-		Err:  errors.New("article not found"),
-	}
 }

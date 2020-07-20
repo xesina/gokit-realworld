@@ -153,11 +153,20 @@ func (ja *JWTAuth) keyFunc(t *jwt.Token) (interface{}, error) {
 func Authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, _, err := FromContext(r.Context())
-
-		if err != nil || token == nil || !token.Valid {
+		if err != nil {
+			// TODO: log err
 			httpError.EncodeError(
 				r.Context(),
-				httpError.NewError(http.StatusUnauthorized, err),
+				httpError.NewError(http.StatusInternalServerError, httpError.ErrUnauthorized),
+				w,
+			)
+			return
+		}
+
+		if token == nil || !token.Valid {
+			httpError.EncodeError(
+				r.Context(),
+				httpError.NewError(http.StatusUnauthorized, httpError.ErrUnauthorized),
 				w,
 			)
 			return

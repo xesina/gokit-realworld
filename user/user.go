@@ -5,7 +5,7 @@ import (
 )
 
 type Service struct {
-	Store realworld.UserRepo
+	UserRepo realworld.UserRepo
 }
 
 func (s Service) Register(u realworld.User) (*realworld.User, error) {
@@ -14,24 +14,24 @@ func (s Service) Register(u realworld.User) (*realworld.User, error) {
 		return nil, realworld.InternalError(err)
 	}
 	u.Password = hashed
-	return s.Store.Create(u)
+	return s.UserRepo.Create(u)
 }
 
 func (s Service) Login(u realworld.User) (*realworld.User, error) {
-	found, err := s.Store.Get(u.Email)
+	found, err := s.UserRepo.Get(u.Email)
 	if err != nil {
 		return nil, err
 	}
 
 	if !found.CheckPassword(u.Password) {
-		return nil, realworld.IncorrectPasswordError()
+		return nil, realworld.ErrIncorrectPasswordError
 	}
 
 	return found, nil
 }
 
 func (s Service) Get(u realworld.User) (*realworld.User, error) {
-	return s.Store.GetByID(u.ID)
+	return s.UserRepo.GetByID(u.ID)
 }
 
 func (s Service) Update(u realworld.User) (*realworld.User, error) {
@@ -45,27 +45,27 @@ func (s Service) Update(u realworld.User) (*realworld.User, error) {
 		u.Password = hashed
 	}
 
-	return s.Store.Update(u)
+	return s.UserRepo.Update(u)
 }
 
 func (s Service) GetProfile(user realworld.User) (*realworld.User, error) {
-	return s.Store.GetByUsername(user.Username)
+	return s.UserRepo.GetByUsername(user.Username)
 }
 
 func (s Service) Follow(req realworld.FollowRequest) (*realworld.User, error) {
-	followee, err := s.Store.GetByUsername(req.Followee)
+	followee, err := s.UserRepo.GetByUsername(req.Followee)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.Store.AddFollower(req.Follower, followee.ID)
+	return s.UserRepo.AddFollower(req.Follower, followee.ID)
 }
 
 func (s Service) Unfollow(req realworld.FollowRequest) (*realworld.User, error) {
-	followee, err := s.Store.GetByUsername(req.Followee)
+	followee, err := s.UserRepo.GetByUsername(req.Followee)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.Store.RemoveFollower(req.Follower, followee.ID)
+	return s.UserRepo.RemoveFollower(req.Follower, followee.ID)
 }

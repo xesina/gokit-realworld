@@ -40,6 +40,34 @@ func (h UserHandler) decodeRegisterRequest(_ context.Context, r *http.Request) (
 	return er, nil
 }
 
+func (h UserHandler) encodeRegisterResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if resp, ok := response.(endpoint.Failer); ok && resp.Failed() != nil {
+		httpError.EncodeError(ctx, resp.Failed(), w)
+		return nil
+	}
+
+	e := response.(user.Response)
+
+	hresp := newUserResponse(&e)
+
+	claims := jwt.MapClaims{
+		"id": e.ID,
+	}
+
+	middleware.SetIssuedNow(claims)
+	middleware.SetExpiryIn(claims, time.Hour*24*5)
+
+	_, tokenString, err := h.jwt.Encode(claims)
+
+	if err != nil {
+		return err
+	}
+
+	hresp.User.Token = tokenString
+
+	return jsonResponse(w, hresp, http.StatusCreated)
+}
+
 type userRegisterRequest struct {
 	User struct {
 		Username string `json:"username" valid:"required~username is blank"`
@@ -132,7 +160,7 @@ func (h UserHandler) encodeUserResponse(ctx context.Context, w http.ResponseWrit
 
 	hresp.User.Token = tokenString
 
-	return jsonResponse(w, hresp, http.StatusCreated)
+	return jsonResponse(w, hresp, http.StatusOK)
 }
 
 type userLoginRequest struct {

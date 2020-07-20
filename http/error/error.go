@@ -14,9 +14,10 @@ const (
 )
 
 var (
-	ErrNotFound    = errors.New("not found")
-	ErrRequestBody = errors.New("invalid request body")
-	ErrInternal    = errors.New("internal server error")
+	ErrNotFound     = errors.New("not found")
+	ErrRequestBody  = errors.New("invalid request body")
+	ErrInternal     = errors.New("internal server error")
+	ErrUnauthorized = errors.New("unauthorized access")
 )
 
 // encode errors from business-logic

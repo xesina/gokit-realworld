@@ -25,7 +25,7 @@ func (store *memArticleRepo) Create(a realworld.Article) (*realworld.Article, er
 	defer store.rwlock.Unlock()
 
 	if _, ok := store.m[a.Slug]; ok {
-		return nil, realworld.ArticleAlreadyExistsError(a.Slug)
+		return nil, realworld.ErrArticleAlreadyExists
 	}
 
 	a.ID = atomic.AddInt64(&store.counter, 1)
@@ -44,13 +44,12 @@ func (store *memArticleRepo) Update(slug string, a realworld.Article) (*realworl
 
 	old, ok := store.m[slug]
 	if !ok {
-		return nil, realworld.ArticleNotFoundError()
+		return nil, realworld.ErrArticleNotFound
 	}
 
 	a.ID = old.ID
 	a.Comments = old.Comments
 	a.Favorites = old.Favorites
-	a.Tags = old.Tags
 	a.CreatedAt = old.CreatedAt
 	a.UpdatedAt = time.Now()
 
@@ -77,18 +76,18 @@ func (store *memArticleRepo) Get(slug string) (*realworld.Article, error) {
 	article, ok := store.m[slug]
 
 	if !ok {
-		return nil, realworld.ArticleNotFoundError()
+		return nil, realworld.ErrArticleNotFound
 	}
 
 	return &article, nil
 }
 
-func (store *memArticleRepo) List(req realworld.ListRequest) ([]*realworld.Article, error) {
+func (store *memArticleRepo) List(offset, limit int) ([]*realworld.Article, int, error) {
 	store.rwlock.RLock()
 	defer store.rwlock.RUnlock()
 
 	if len(store.m) == 0 {
-		return []*realworld.Article{}, nil
+		return []*realworld.Article{}, 0, nil
 	}
 
 	count := len(store.m)
@@ -111,18 +110,46 @@ func (store *memArticleRepo) List(req realworld.ListRequest) ([]*realworld.Artic
 		}
 	}
 
-	qualified := store.filterByTag(req.Tag, orderedByIDs)
-	qualified = store.filterByAuthorID(req.AuthorID, qualified)
-	qualified = store.filterByFavotiterID(req.FavoriterID, qualified)
-
-	offset, limit := 0, 20
-
-	if req.Offset > 0 {
-		offset = req.Limit
+	var limited []*realworld.Article
+	for i := offset; i < limit; i++ {
+		if i >= len(orderedByIDs) {
+			break
+		}
+		limited = append(limited, orderedByIDs[i])
 	}
-	if req.Limit > 0 {
-		limit = req.Limit
+
+	return limited, len(limited), nil
+}
+
+func (store *memArticleRepo) ListByTag(tag string, offset, limit int) ([]*realworld.Article, int, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	if len(store.m) == 0 {
+		return []*realworld.Article{}, 0, nil
 	}
+
+	count := len(store.m)
+	orderedByIDs := make([]*realworld.Article, count)
+	ids := make([]int, 0)
+
+	for _, v := range store.m {
+		ids = append(ids, int(v.ID))
+	}
+
+	sort.Ints(ids)
+	for i, id := range ids {
+		for k, a := range store.m {
+			if a.ID != int64(id) {
+				continue
+			}
+			a := store.m[k]
+			orderedByIDs[i] = &a
+			break
+		}
+	}
+
+	qualified := store.filterByTag(tag, orderedByIDs)
 
 	var limited []*realworld.Article
 	for i := offset; i < limit; i++ {
@@ -132,15 +159,97 @@ func (store *memArticleRepo) List(req realworld.ListRequest) ([]*realworld.Artic
 		limited = append(limited, qualified[i])
 	}
 
-	return limited, nil
+	return limited, len(limited), nil
 }
 
-func (store *memArticleRepo) Feed(req realworld.FeedRequest) ([]*realworld.Article, error) {
+func (store *memArticleRepo) ListByAuthorID(id int64, offset, limit int) ([]*realworld.Article, int, error) {
 	store.rwlock.RLock()
 	defer store.rwlock.RUnlock()
 
 	if len(store.m) == 0 {
-		return []*realworld.Article{}, nil
+		return []*realworld.Article{}, 0, nil
+	}
+
+	count := len(store.m)
+	orderedByIDs := make([]*realworld.Article, count)
+	ids := make([]int, 0)
+
+	for _, v := range store.m {
+		ids = append(ids, int(v.ID))
+	}
+
+	sort.Ints(ids)
+	for i, id := range ids {
+		for k, a := range store.m {
+			if a.ID != int64(id) {
+				continue
+			}
+			a := store.m[k]
+			orderedByIDs[i] = &a
+			break
+		}
+	}
+
+	qualified := store.filterByAuthorID(id, orderedByIDs)
+
+	var limited []*realworld.Article
+	for i := offset; i < limit; i++ {
+		if i >= len(qualified) {
+			break
+		}
+		limited = append(limited, qualified[i])
+	}
+
+	return limited, len(limited), nil
+}
+
+func (store *memArticleRepo) ListByFavoriterID(id int64, offset, limit int) ([]*realworld.Article, int, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	if len(store.m) == 0 {
+		return []*realworld.Article{}, 0, nil
+	}
+
+	count := len(store.m)
+	orderedByIDs := make([]*realworld.Article, count)
+	ids := make([]int, 0)
+
+	for _, v := range store.m {
+		ids = append(ids, int(v.ID))
+	}
+
+	sort.Ints(ids)
+	for i, id := range ids {
+		for k, a := range store.m {
+			if a.ID != int64(id) {
+				continue
+			}
+			a := store.m[k]
+			orderedByIDs[i] = &a
+			break
+		}
+	}
+
+	qualified := store.filterByAuthorID(id, orderedByIDs)
+
+	var limited []*realworld.Article
+	for i := offset; i < limit; i++ {
+		if i >= len(qualified) {
+			break
+		}
+		limited = append(limited, qualified[i])
+	}
+
+	return limited, len(limited), nil
+}
+
+func (store *memArticleRepo) Feed(req realworld.FeedRequest) ([]*realworld.Article, int, error) {
+	store.rwlock.RLock()
+	defer store.rwlock.RUnlock()
+
+	if len(store.m) == 0 {
+		return []*realworld.Article{}, 0, nil
 	}
 
 	count := len(store.m)
@@ -185,7 +294,7 @@ func (store *memArticleRepo) Feed(req realworld.FeedRequest) ([]*realworld.Artic
 		limited = append(limited, qualified[i])
 	}
 
-	return limited, nil
+	return limited, len(limited), nil
 }
 
 func (store *memArticleRepo) filterByTag(tag string, articles []*realworld.Article) []*realworld.Article {
@@ -239,7 +348,7 @@ func (store *memArticleRepo) AddFavorite(a realworld.Article, u realworld.User) 
 
 	article, ok := store.m[a.Slug]
 	if !ok {
-		return nil, realworld.ArticleNotFoundError()
+		return nil, realworld.ErrArticleNotFound
 	}
 
 	article.Favorites[u.ID] = struct{}{}
@@ -253,7 +362,7 @@ func (store *memArticleRepo) RemoveFavorite(a realworld.Article, u realworld.Use
 
 	article, ok := store.m[a.Slug]
 	if !ok {
-		return nil, realworld.ArticleNotFoundError()
+		return nil, realworld.ErrArticleNotFound
 	}
 
 	delete(article.Favorites, u.ID)

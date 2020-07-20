@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/xesina/go-kit-realworld-example-app/article"
 	httpTransport "github.com/xesina/go-kit-realworld-example-app/http"
-	"github.com/xesina/go-kit-realworld-example-app/inmem"
+	"github.com/xesina/go-kit-realworld-example-app/sqlite"
 	"github.com/xesina/go-kit-realworld-example-app/user"
 	"net/http"
 	"os"
@@ -13,11 +13,18 @@ import (
 )
 
 func main() {
-	inmemUserRepo := inmem.NewMemUserSaver()
-	userSrv := user.Service{Store: inmemUserRepo}
 
-	inmemArticleRepo := inmem.NewMemArticleRepo()
-	articleSrv := article.Service{Store: inmemArticleRepo}
+	//in-memory implementation
+	//inmemUserRepo := inmem.NewMemUserSaver()
+	//inmemArticleRepo := inmem.NewMemArticleRepo()
+
+	s, err := sqlite.NewStorage("./realworld.db")
+	if err != nil {
+		panic(err)
+	}
+	s.Migrate()
+	userSrv := user.Service{UserRepo: s.NewUserRepository()}
+	articleSrv := article.Service{Repo: s.NewArticleRepository()}
 
 	h := httpTransport.MakeHTTPHandler(userSrv, articleSrv)
 

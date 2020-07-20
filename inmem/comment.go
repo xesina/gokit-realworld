@@ -9,7 +9,7 @@ import (
 func (store *memArticleRepo) AddComment(c realworld.Comment) (comment *realworld.Comment, err error) {
 	article, ok := store.m[c.Article.Slug]
 	if !ok {
-		return nil, realworld.ArticleNotFoundError()
+		return nil, realworld.ErrArticleNotFound
 	}
 
 	c.ID = atomic.AddInt64(&store.counter, 1)
@@ -24,7 +24,7 @@ func (store *memArticleRepo) AddComment(c realworld.Comment) (comment *realworld
 func (store *memArticleRepo) DeleteComment(c realworld.Comment) error {
 	article, ok := store.m[c.Article.Slug]
 	if !ok {
-		return realworld.ArticleNotFoundError()
+		return realworld.ErrArticleNotFound
 	}
 
 	delete(article.Comments, c.ID)
@@ -35,7 +35,7 @@ func (store *memArticleRepo) DeleteComment(c realworld.Comment) error {
 func (store *memArticleRepo) Comments(a realworld.Article) ([]*realworld.Comment, error) {
 	article, ok := store.m[a.Slug]
 	if !ok {
-		return nil, realworld.ArticleNotFoundError()
+		return nil, realworld.ErrArticleNotFound
 	}
 
 	var comments []*realworld.Comment

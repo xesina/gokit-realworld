@@ -39,6 +39,15 @@ func (h ArticleHandler) decodeCreateRequest(_ context.Context, r *http.Request) 
 	return er, nil
 }
 
+func (h ArticleHandler) encodeCreateResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if resp, ok := response.(endpoint.Failer); ok && resp.Failed() != nil {
+		httpError.EncodeError(ctx, resp.Failed(), w)
+		return nil
+	}
+	e := response.(article.Response)
+	return jsonResponse(w, newArticleResponse(&e), http.StatusOK)
+}
+
 type articleCreateRequest struct {
 	userID  int64
 	Article struct {
@@ -138,7 +147,7 @@ func (h ArticleHandler) encodeArticlesResponse(ctx context.Context, w http.Respo
 		return nil
 	}
 	e := response.(article.ListResponse)
-	return jsonResponse(w, newArticlesResponse(&e), http.StatusCreated)
+	return jsonResponse(w, newArticlesResponse(&e), http.StatusOK)
 }
 
 type deleteRequest struct {
@@ -290,14 +299,12 @@ func (h ArticleHandler) decodeFavoriteRequest(_ context.Context, r *http.Request
 }
 
 type listRequest struct {
-	userID      int64
-	tag         string
-	author      string
-	authorID    int64
-	favoritedBy string
-	favoriterID int64
-	limit       int
-	offset      int
+	userID    int64
+	tag       string
+	author    string
+	favoriter string
+	limit     int
+	offset    int
 }
 
 func (req *listRequest) bind(r *http.Request) error {
@@ -313,11 +320,11 @@ func (req *listRequest) bind(r *http.Request) error {
 
 	req.tag = r.URL.Query().Get("tag")
 	req.author = r.URL.Query().Get("author")
-	req.favoritedBy = r.URL.Query().Get("favorited")
+	req.favoriter = r.URL.Query().Get("favorited")
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
-		limit = 0
+		limit = 20
 	}
 	req.limit = limit
 
@@ -327,25 +334,17 @@ func (req *listRequest) bind(r *http.Request) error {
 	}
 	req.offset = offset
 
-	if err := req.validate(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (req *listRequest) validate() error {
 	return nil
 }
 
 func (req *listRequest) endpointRequest() article.ListRequest {
 	return article.ListRequest{
-		UserID:      req.userID,
-		Tag:         req.tag,
-		AuthorID:    req.authorID,
-		FavoriterID: req.favoriterID,
-		Limit:       req.limit,
-		Offset:      req.offset,
+		UserID:    req.userID,
+		Tag:       req.tag,
+		Author:    req.author,
+		Favoriter: req.favoriter,
+		Limit:     req.limit,
+		Offset:    req.offset,
 	}
 }
 
@@ -354,23 +353,6 @@ func (h ArticleHandler) decodeListRequest(_ context.Context, r *http.Request) (r
 	if err := req.bind(r); err != nil {
 		return nil, err
 	}
-
-	if req.favoritedBy != "" {
-		favoriter, err := h.userService.GetProfile(realworld.User{Username: req.favoritedBy})
-		if err != nil {
-			return nil, err
-		}
-		req.favoriterID = favoriter.ID
-	}
-
-	if req.author != "" {
-		author, err := h.userService.GetProfile(realworld.User{Username: req.author})
-		if err != nil {
-			return nil, err
-		}
-		req.authorID = author.ID
-	}
-
 	er := req.endpointRequest()
 	return er, nil
 }
@@ -403,7 +385,7 @@ func newArticlesResponse(list *article.ListResponse) (aa articleListResponse) {
 		}
 		aa.Articles = append(aa.Articles, &resp)
 	}
-	aa.ArticlesCount = len(list.Articles)
+	aa.ArticlesCount = list.Count
 	return
 }
 
@@ -468,9 +450,10 @@ type articleUpdateRequest struct {
 	userID  int64
 	slug    string
 	Article struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Body        string `json:"body"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Body        string   `json:"body"`
+		Tags        []string `json:"tagList"`
 	} `json:"article"`
 }
 
@@ -512,6 +495,7 @@ func (req *articleUpdateRequest) endpointRequest() article.UpdateRequest {
 		Title:       req.Article.Title,
 		Description: req.Article.Description,
 		Body:        req.Article.Body,
+		Tags:        req.Article.Tags,
 	}
 }
 
@@ -547,5 +531,5 @@ func (h ArticleHandler) encodeTagsResponse(ctx context.Context, w http.ResponseW
 		return nil
 	}
 	e := response.(article.TagsResponse)
-	return jsonResponse(w, newTagsResponse(e), http.StatusCreated)
+	return jsonResponse(w, newTagsResponse(e), http.StatusOK)
 }

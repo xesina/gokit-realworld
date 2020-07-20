@@ -11,7 +11,7 @@ func (h UserHandler) registerHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		user.RegisterEndpoint(h.service),
 		h.decodeRegisterRequest,
-		h.encodeUserResponse,
+		h.encodeRegisterResponse,
 		h.serverOptions...,
 	))
 }
@@ -74,7 +74,7 @@ func (h ArticleHandler) createHandlerFunc() http.HandlerFunc {
 	return wrapHandler(transport.NewServer(
 		article.CreateEndpoint(h.service, h.userService),
 		h.decodeCreateRequest,
-		h.encodeArticleResponse,
+		h.encodeCreateResponse,
 		h.serverOptions...,
 	))
 }

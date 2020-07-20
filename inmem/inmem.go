@@ -23,7 +23,7 @@ func (store *memUserSaver) Create(u realworld.User) (*realworld.User, error) {
 	defer store.rwlock.Unlock()
 
 	if _, ok := store.m[u.Email]; ok {
-		return nil, realworld.UserAlreadyExistsError(u.Email)
+		return nil, realworld.ErrUserAlreadyExists
 	}
 
 	u.ID = atomic.AddInt64(&store.counter, 1)
@@ -39,7 +39,7 @@ func (store *memUserSaver) Update(u realworld.User) (*realworld.User, error) {
 
 	old, ok := store.m[u.Email]
 	if !ok {
-		return nil, realworld.UserNotFoundError()
+		return nil, realworld.ErrUserNotFound
 	}
 
 	// TODO: should we do this password related thing in storage!?
@@ -65,7 +65,7 @@ func (store *memUserSaver) Update(u realworld.User) (*realworld.User, error) {
 func (store *memUserSaver) Get(e string) (*realworld.User, error) {
 	user, ok := store.m[e]
 	if !ok {
-		return nil, realworld.UserNotFoundError()
+		return nil, realworld.ErrUserNotFound
 	}
 	return &user, nil
 }
@@ -82,7 +82,7 @@ func (store *memUserSaver) GetByID(id int64) (*realworld.User, error) {
 	}
 	user, ok := store.m[email]
 	if !ok {
-		return nil, realworld.UserNotFoundError()
+		return nil, realworld.ErrUserNotFound
 	}
 	return &user, nil
 }
@@ -99,7 +99,7 @@ func (store *memUserSaver) GetByUsername(username string) (*realworld.User, erro
 	}
 	user, ok := store.m[email]
 	if !ok {
-		return nil, realworld.UserNotFoundError()
+		return nil, realworld.ErrUserNotFound
 	}
 	return &user, nil
 }

@@ -3,9 +3,15 @@ package go_kit_realworld_example_app
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
+)
+
+var (
+	ErrResourceNotFound       = Error{ENotFound, errors.New("resource not found")}
+	ErrUserNotFound           = Error{ENotFound, errors.New("user not found")}
+	ErrUserAlreadyExists      = Error{EConflict, errors.New("user already exists")}
+	ErrIncorrectPasswordError = Error{EIncorrectPassword, errors.New("incorrect password")}
 )
 
 type Bio struct {
@@ -132,25 +138,4 @@ type UserRepo interface {
 	GetByUsername(u string) (*User, error)
 	AddFollower(follower, followee int64) (*User, error)
 	RemoveFollower(follower, followee int64) (*User, error)
-}
-
-func UserAlreadyExistsError(email string) error {
-	return Error{
-		Code: EConflict,
-		Err:  fmt.Errorf("user with email: %s already exists", email),
-	}
-}
-
-func UserNotFoundError() error {
-	return Error{
-		Code: ENotFound,
-		Err:  errors.New("user not found"),
-	}
-}
-
-func IncorrectPasswordError() error {
-	return Error{
-		Code: EIncorrectPassword,
-		Err:  errors.New("incorrect password"),
-	}
 }

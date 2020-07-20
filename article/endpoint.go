@@ -55,6 +55,7 @@ type Response struct {
 }
 
 func (r Response) TagsList() (tt []string) {
+	tt = make([]string, 0)
 	for _, t := range r.Tags {
 		tt = append(tt, t.Tag)
 	}
@@ -132,6 +133,7 @@ type UpdateRequest struct {
 	Title       string
 	Description string
 	Body        string
+	Tags        []string
 }
 
 func (r UpdateRequest) toArticle() (a realworld.Article) {
@@ -142,6 +144,12 @@ func (r UpdateRequest) toArticle() (a realworld.Article) {
 	}
 	a.Author = realworld.User{ID: r.UserID}
 	a.Slug = a.MakeSlug()
+
+	a.Tags = make(realworld.Tags)
+	for _, t := range r.Tags {
+		a.Tags[t] = realworld.Tag{Tag: t}
+	}
+
 	return
 }
 
@@ -181,17 +189,18 @@ func GetEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.E
 
 type ListResponse struct {
 	Articles []Article
+	Count    int
 	Err      error
 }
 
 func NewListResponse(
-	articles []*realworld.Article, u *realworld.User, userSrv realworld.UserService, err error,
+	articles []*realworld.Article, count int, u *realworld.User, userSrv realworld.UserService, err error,
 ) ListResponse {
 	var listResponse ListResponse
 	for _, article := range articles {
 		author, err := userSrv.Get(realworld.User{ID: article.Author.ID})
 		if err != nil {
-			return ListResponse{nil, err}
+			return ListResponse{nil, 0, err}
 		}
 
 		resp := Article{
@@ -200,20 +209,24 @@ func NewListResponse(
 			Description:    article.Description,
 			Body:           article.Body,
 			Tags:           article.Tags,
-			Favorited:      article.Favorited(u.ID),
 			FavoritesCount: len(article.Favorites),
 			Author: Author{
-				Username:  author.Username,
-				Bio:       author.Bio,
-				Image:     author.Image,
-				Following: author.IsFollower(u),
+				Username: author.Username,
+				Bio:      author.Bio,
+				Image:    author.Image,
 			},
 			CreatedAt: article.CreatedAt,
 			UpdatedAt: article.UpdatedAt,
 		}
 
+		if u != nil {
+			resp.Favorited = article.Favorited(u.ID)
+			resp.Author.Following = author.IsFollower(u)
+		}
+
 		listResponse.Articles = append(listResponse.Articles, resp)
 	}
+	listResponse.Count = count
 	listResponse.Err = err
 
 	return listResponse
@@ -226,8 +239,10 @@ func (r ListResponse) Failed() error { return r.Err }
 type ListRequest struct {
 	UserID      int64
 	Tag         string
-	AuthorID    int64
-	FavoriterID int64
+	Author      string
+	authorID    int64
+	Favoriter   string
+	favoriterID int64
 	Limit       int
 	Offset      int
 }
@@ -235,8 +250,8 @@ type ListRequest struct {
 func (req ListRequest) serviceRequest() realworld.ListRequest {
 	return realworld.ListRequest{
 		Tag:         req.Tag,
-		AuthorID:    req.AuthorID,
-		FavoriterID: req.FavoriterID,
+		AuthorID:    req.authorID,
+		FavoriterID: req.favoriterID,
 		Offset:      req.Offset,
 		Limit:       req.Limit,
 	}
@@ -245,18 +260,35 @@ func (req ListRequest) serviceRequest() realworld.ListRequest {
 func ListEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(ListRequest)
-		aa, err := a.List(req.serviceRequest())
+		var user *realworld.User
+
+		if req.Author != "" {
+			user, err = u.GetProfile(realworld.User{Username: req.Author})
+			if err != nil {
+				return nil, err
+			}
+			req.authorID = user.ID
+
+		} else if req.Favoriter != "" {
+			user, err = u.GetProfile(realworld.User{Username: req.Favoriter})
+			if err != nil {
+				return nil, err
+			}
+			req.favoriterID = user.ID
+		}
+
+		aa, count, err := a.List(req.serviceRequest())
 		if err != nil {
 			return nil, err
 		}
-		var user *realworld.User
+
 		if req.UserID > 0 {
 			user, err = u.Get(realworld.User{ID: req.UserID})
 			if err != nil {
 				return nil, err
 			}
 		}
-		return NewListResponse(aa, user, u, err), nil
+		return NewListResponse(aa, count, user, u, err), nil
 	}
 }
 
@@ -357,10 +389,10 @@ func FeedEndpoint(a realworld.ArticleService, u realworld.UserService) endpoint.
 			return nil, err
 		}
 		req.FollowingIDs = user.Followings.List()
-		aa, err := a.Feed(req)
+		aa, count, err := a.Feed(req)
 		if err != nil {
 			return nil, err
 		}
-		return NewListResponse(aa, user, u, err), nil
+		return NewListResponse(aa, count, user, u, err), nil
 	}
 }
